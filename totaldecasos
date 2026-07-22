@@ -1,0 +1,403 @@
+getwd() 
+
+setwd("Z:/localdapasta")  
+getwd()
+library(tidyverse)
+library(readxl)
+library(openxlsx)
+library(data.table)
+library(pacman)
+library(formattable)
+library(esquisse)
+
+
+
+temp <- tempfile()
+download.file("https://www.cnj.jus.br/download/4431/justica-em-numeros/196206/02-set-2022.zip",temp)
+jntj <- read.csv2(unzip(temp,"JN_02-Set-2022.csv"), dec=",", header = TRUE, stringsAsFactor=F,na.strings="nd")
+
+view(jntj)
+names(jntj)
+installed.packages()
+
+#----2017 até 2022 TJRO casos novos#--------------------------------------------
+# Histórico de Casos Novos (tabela e gráfico)
+
+# Tabelas
+
+casos_novos <-  jntj %>% 
+                  filter(justica == 'Estadual', sigla == 'TJRO' , ano >= 2017 ) %>% 
+                  select(justica, sigla, ano, cnocrim2, cnoncrim2, cnrcrim2 ,
+                         cnrncrim2 , cnocrimtr , cnoncrimtr , cnrcrimtr , cnrncrimtr , cnccrim1, 
+                         cncncrim1 , cnextfisc1 , cnextnfisc1 , 
+                         exejudcrimnpl1 , exejudcrimpl1 , exejudncrim1 , 
+                         cnccrimje , cncncrimje , cnextje , 
+                         exejudcrimnplje , exejudncrimje) %>% 
+                  mutate(casosnovos = (cnocrim2+ cnoncrim2 + cnrcrim2 +
+                         cnrncrim2 + cnocrimtr + cnoncrimtr + cnrcrimtr + cnrncrimtr + cnccrim1+ 
+                         cncncrim1 + cnextfisc1 + cnextnfisc1 + exejudcrimnpl1 + 
+                         exejudcrimpl1 + exejudncrim1 + cnccrimje + cncncrimje + cnextje + 
+                         exejudcrimnplje + exejudncrimje), ano = as.character(ano)) %>% 
+                  select(Ano = ano, `Casos Novos` = casosnovos)
+
+formattable(casos_novos)
+
+# Gráfico
+esquisse::esquisser()
+
+
+ggplot(casos_novos) +
+  aes(x = Ano, y = `Casos Novos`) +
+  geom_col(fill = "lightslateblue", color = 'slateblue') +
+  labs(x = "Ano", 
+       y = "Quantitativo",  title = "Evolução dos Casos Novos - de 2017 a 2021") + 
+                                                                                           
+  theme_minimal() + geom_label(aes(label = `Casos Novos`))
+  theme(
+    plot.title = element_text(size = 19L,
+                              face = "bold",
+                              hjust = 0.5),
+    axis.title.y = element_text(size = 12L,
+                                face = "bold"),
+    axis.title.x = element_text(size = 12L,
+                                face = "bold") 
+    )
+
+colors()
+
+
+
+
+
+#----cn estaduais, federais, judicais eleitorais e trabalistas 2022#------------
+
+casos_novos1 <- jntj %>% 
+
+  
+  
+  select(justica, ano,cnocrim2, cnoncrim2, cnrcrim2 , 
+         cnrncrim2 , cnocrimtr , cnoncrimtr , cnrcrimtr , cnrncrimtr , cnccrim1, 
+         cncncrim1 , cnextfisc1 , cnextnfisc1 , exejudcrimnpl1 ,
+         exejudcrimpl1 , exejudncrim1 , cnccrimje , cncncrimje , cnextje , 
+         exejudcrimnplje , exejudncrimje) %>% 
+  mutate(casosnovos = cnocrim2+ cnoncrim2 + cnrcrim2 + cnrncrim2 +
+                  cnocrimtr + cnoncrimtr + cnrcrimtr + cnrncrimtr + cnccrim1+ 
+                         cncncrim1 + cnextfisc1 + cnextnfisc1 +
+            exejudcrimnpl1 + exejudcrimpl1 +
+              exejudncrim1 + cnccrimje + cncncrimje + cnextje + 
+                         exejudcrimnplje + exejudncrimje) %>% 
+  
+  filter(justica %in% c('Estadual', 'Federal', 
+                        'Eleitoral', 'Trabalho'), ano > 2020 ) %>% 
+
+
+group_by(justica) %>% 
+  
+  summarise(cnx = sum(casosnovos, na.rm = T)) %>% 
+
+
+select(justica, cnx)
+
+formattable(casos_novos1)
+casos_novos1 %>% 
+ggplot(aes(x = justica, y =cnx )) +
+  geom_col(fill = "lightslateblue", color = 'slateblue') +
+  labs(x = "justiças", 
+       y = "Quantitativo",  title = "Evolução dos Casos Novos por setor") + 
+  
+  theme_minimal() +
+theme(
+  plot.title = element_text(size = 19L,
+                            face = "bold",
+                            hjust = 0.5),
+  axis.title.y = element_text(size = 12L,
+                              face = "bold"),
+  axis.title.x = element_text(size = 12L,
+                              face = "bold") 
+)
+
+
+
+#----quantidade de casos novos por TJs estadual#--------------------------------
+
+
+casos_novos2 <- jntj %>% 
+  
+  
+  
+ 
+  
+  
+  select(justica, ano, sigla,cnocrim2,cnoncrim2,cnrcrim2,
+         cnrncrim2 ,cnccrim1,cncncrim1,
+         cnextfisc1,cnextnfisc1,
+         exejudcrimnpl1,exejudcrimpl1,exejudncrim1,cnocrimtr
+         ,cnoncrimtr ,cnrcrimtr
+  ,cnrncrimtr,cnccrimje ,cncncrimje ,cnextje,exejudcrimnplje,exejudncrimje) %>% 
+
+mutate(casosntjs = cnocrim2 + cnoncrim2+cnrcrim2+cnrncrim2 +cnccrim1+cncncrim1+
+       cnextfisc1+cnextnfisc1+
+       exejudcrimnpl1+exejudcrimpl1+exejudncrim1+cnocrimtr
+       +cnoncrimtr +cnrcrimtr
+   +cnrncrimtr+cnccrimje +cncncrimje +cnextje+exejudcrimnplje+exejudncrimje) %>% 
+  filter(justica =="Estadual", sigla != "TJ", ano == 2021) %>% 
+
+  select(justica, sigla, ano, casosntjs)
+####
+casos_novos2 %>% ggplot(aes(x = reorder(sigla, casosntjs),  y = casosntjs/10000)) +
+  geom_bar(stat = "identity", fill = 'cyan3', color = 'seagreen2' ) + labs(x = 'TJs', y = 'casos novos por TJ estadual')+coord_flip()
+
+#----criar o Indicador, que será tbaix/cn#--------------------------------------
+colors()
+names(IAC)
+IAC<-jntj %>%   
+  
+  
+  
+  
+  filter(justica == 'Estadual', sigla == 'TJRO' , ano >= 2017 ) %>% 
+select(justica, sigla, ano, cnocrim2, cnoncrim2, cnrcrim2 ,
+       cnrncrim2 , cnocrimtr , cnoncrimtr , cnrcrimtr , cnrncrimtr , cnccrim1, 
+       cncncrim1 , cnextfisc1 , cnextnfisc1 , exejudcrimnpl1 ,
+       exejudcrimpl1 , exejudncrim1 , cnccrimje , cncncrimje , cnextje , 
+   exejudcrimnplje , exejudncrimje, tbaixcrim ,
+tbaixncrim2 , tbaixcrimtr , tbaixncrimtr , 
+tbaixccrim1 , tbaixcncrim1 , tbaixextfisc1 ,
+         tbaixextnfisc1 , tbaixjudcrimnpl1 , 
+tbaixjudcrimpl1 , tbaixjudncrim1 ,
+         tbaixccrimje , tbaixcncrimje ,
+tbaixextje , tbaixjudcrimnplje , tbaixjudncrimje) %>% 
+
+  
+ 
+  
+  
+  
+  
+  
+  
+  mutate(casosnovos = (cnocrim2+ cnoncrim2 + cnrcrim2 + cnrncrim2 + cnocrimtr + 
+                         cnoncrimtr + cnrcrimtr + cnrncrimtr + cnccrim1+ 
+         cncncrim1 + cnextfisc1 + cnextnfisc1 + exejudcrimnpl1 + exejudcrimpl1 +
+           exejudncrim1 + cnccrimje + cncncrimje + cnextje + 
+         exejudcrimnplje + exejudncrimje), tbaixados =( tbaixcrim +tbaixncrim2 +
+      tbaixcrimtr + tbaixncrimtr + tbaixccrim1 + tbaixcncrim1 + tbaixextfisc1 +
+         tbaixextnfisc1 + tbaixjudcrimnpl1 + tbaixjudcrimpl1 + tbaixjudncrim1 +
+ tbaixccrimje + tbaixcncrimje + tbaixextje + tbaixjudcrimnplje +
+tbaixjudncrimje), iad = tbaixados/casosnovos,
+iadpercentual = formattable::percent(iad)) %>% 
+
+  select(casosnovos, tbaixados, iad, iadpercentual) 
+formattable(IAC)
+
+  
+  #----historico dos casos pendentes#-------------------------------------------
+  pendentes <- jntj %>%
+    
+    
+    select( sigla, ano, 
+           cpcrim2 , cpncrim2 , cpcrimtr , cpncrimtr , cpccrim1 , 
+           cpcncrim1 , cpextfisc1 , cpextnfisc1 , exejudpcrimnpl1 ,
+           exejudpcrimpl1 , exejudpncrim1 , cpccrimje , cpcncrimje , 
+           cpextje , exejudpcrimnplje , exejudpncrimje) %>% 
+    
+    
+    
+    filter( sigla == "TJRO", ano > 2014) %>% 
+    
+    
+    
+ mutate(totalpendentes = cpcrim2 + cpncrim2 + cpcrimtr + cpncrimtr + cpccrim1 + 
+             cpcncrim1 + cpextfisc1 + cpextnfisc1 + 
+    exejudpcrimnpl1 + exejudpcrimpl1 + exejudpncrim1 + cpccrimje + cpcncrimje + 
+             cpextje + exejudpcrimnplje + exejudpncrimje)%>% 
+    
+    select(ano, totalpendentes)
+  ####tabela dos casos pendentes####
+  formattable(pendentes)
+  ####grafico dos casos pendentes#####
+  
+  pendentes %>% 
+    ggplot(aes(x = ano, y = totalpendentes )) +
+    geom_col(fill = "plum", color = 'hotpink') +
+    labs(x = "Ano", 
+         y = "Quantitativo",  title = "Evolução dos pendentes - de 2015 a 2021") + 
+    
+    theme_minimal() + geom_label(aes(label = totalpendentes))
+  theme(
+    plot.title = element_text(size = 19L,
+                              face = "bold",
+                              hjust = 0.5),
+    axis.title.y = element_text(size = 12L,
+                                face = "bold"),
+    axis.title.x = element_text(size = 12L,
+                                face = "bold") 
+  )
+  
+ #----2020_2021-----------------------------------------------------------------
+  
+  casos20_21<- jntj %>%  
+    
+    select( sigla , ano, ccnocrim2,cnoncrim2,cnrcrim2,cnrncrim2 ,
+            cnccrim1,cncncrim1,
+            cnextfisc1,cnextnfisc1,
+            exejudcrimnpl1,exejudcrimpl1,exejudncrim1,cnocrimtr
+            ,cnoncrimtr ,cnrcrimtr
+            ,cnrncrimtr,cnccrimje ,cncncrimje ,cnextje,
+            exejudcrimnplje,exejudncrimje
+) %>% 
+    filter(sigla == "TJRO", ano >=2020) %>% 
+    
+    
+    mutate(casos2 = cnocrim2 + cnoncrim2+cnrcrim2+cnrncrim2,
+           casos1= +cnccrim1+cncncrim1+
+             cnextfisc1+cnextnfisc1+
+             exejudcrimnpl1+exejudcrimpl1+exejudncrim1+cnocrimtr
+           +cnoncrimtr +cnrcrimtr
+ +cnrncrimtr+cnccrimje +cncncrimje +cnextje+exejudcrimnplje+exejudncrimje ) %>% 
+
+select(sigla, ano ,casos1,  casos2 )
+#----historico de casos novos#--------------------------------------------------
+  historico_casos_novos <- jntj %>% 
+    
+    
+select( sigla, ano, cnocrim2, cnoncrim2, cnrcrim2 , cnrncrim2 , cnocrimtr ,
+        cnoncrimtr , cnrcrimtr , cnrncrimtr , cnccrim1, 
+ cncncrim1 , cnextfisc1 , cnextnfisc1 , exejudcrimnpl1 , exejudcrimpl1 ,
+ exejudncrim1 , cnccrimje , cncncrimje , cnextje , 
+  exejudcrimnplje , exejudncrimje ) %>% 
+filter( sigla == "TJRO", ano > 2014) %>% 
+    
+    mutate(histcn = (cnocrim2+ cnoncrim2 + cnrcrim2 + cnrncrim2 + cnocrimtr + 
+                       cnoncrimtr + cnrcrimtr + cnrncrimtr + cnccrim1+ 
+                           cncncrim1 + cnextfisc1 + cnextnfisc1 +
+                       exejudcrimnpl1 +
+                       exejudcrimpl1 + exejudncrim1 + 
+                       cnccrimje + cncncrimje + cnextje + 
+                           exejudcrimnplje + exejudncrimje)) %>% 
+    
+    select(ano, histcn) 
+  ####tabelo  historico dos casos novos de 2015 a 2021####
+  formattable(historico_casos_novos)
+  
+
+  
+  ####grafico historico casos novos de 2015 a 2021####
+  historico_casos_novos %>%  ggplot(aes(x = ano, y = histcn)) +
+    geom_col(fill = "chartreuse", color = 'mediumaquamarine') +
+    labs(x = "Ano", 
+         y = "Quantitativo",  title = "Evolução dos casos novos (TJRO) - de 2015 a 2021") + 
+    
+    theme_minimal() + geom_label(aes(label = histcn))
+  theme(
+    plot.title = element_text(size = 19L,
+                              face = "bold",
+                              hjust = 0.5),
+    axis.title.y = element_text(size = 12L,
+                                face = "bold"),
+    axis.title.x = element_text(size = 12L,
+                                face = "bold") 
+  )
+
+  #----historico de baixados----------------------------------------------------
+  
+  historico_baixados <- jntj %>% 
+    select(sigla, ano, tbaixcrim2 , tbaixncrim2 ,tbaixcrimtr , 
+           tbaixncrimtr , tbaixccrim1 , tbaixcncrim1 , tbaixextfisc1 , 
+           tbaixextnfisc1 ,
+           tbaixjudcrimnpl1 , tbaixjudcrimpl1, tbaixjudncrim1 ,
+           tbaixccrimje , tbaixcncrimje , tbaixextje ,
+           tbaixjudcrimnplje , tbaixjudncrimje) %>% 
+    filter(sigla == "TJRO", ano > 2014) %>% 
+  
+  mutate( histbaixados =( tbaixcrim2 + tbaixncrim2 +tbaixcrimtr + 
+                            tbaixncrimtr + tbaixccrim1 + 
+                            tbaixcncrim1 + tbaixextfisc1 + tbaixextnfisc1 + 
+                          tbaixjudcrimnpl1 + tbaixjudcrimpl1+ tbaixjudncrim1 +
+                          tbaixccrimje + tbaixcncrimje +
+                      tbaixextje + tbaixjudcrimnplje + tbaixjudncrimje)) %>% 
+    select(ano, histbaixados) 
+  #####tabela de baixados ##### 
+  
+  formattable(historico_baixados)
+ ####grafico historico de baixados#### 
+  esquisse::esquisser()
+  historico_baixados %>%  ggplot(aes(x = ano, y = histbaixados ))+
+    geom_col(stat = "identity", color = "steelblue", fill ="skyblue1" ) +  labs(x = "Ano", 
+                                                                                y = "Quantitativo",  title = "Evolução dos baixados - de 2015 a 2021") + 
+    
+    theme_minimal() + geom_label(aes(label = histbaixados))
+  theme(
+    plot.title = element_text(size = 19L,
+                              face = "bold",
+                              hjust = 0.5),
+    axis.title.y = element_text(size = 12L,
+                                face = "bold"),
+    axis.title.x = element_text(size = 12L,
+                                face = "bold") 
+  )
+  
+    #----regressão linear-------------------------------------------------------
+  
+  
+  
+ cn_x_tbaix  <- jntj  %>% 
+   
+   
+   select(sigla, ano, cnocrim2, cnoncrim2, cnrcrim2 , cnrncrim2 , cnocrimtr ,
+         cnoncrimtr , cnrcrimtr , cnrncrimtr , cnccrim1, 
+        cncncrim1 , cnextfisc1 , cnextnfisc1 , exejudcrimnpl1 , exejudcrimpl1 ,
+       exejudncrim1 , cnccrimje , cncncrimje , cnextje , 
+       exejudcrimnplje , exejudncrimje, tbaixcrim ,tbaixncrim2 , tbaixcrimtr , 
+        tbaixncrimtr , tbaixccrim1 , tbaixcncrim1 , tbaixextfisc1 ,
+         tbaixextnfisc1 , tbaixjudcrimnpl1 , tbaixjudcrimpl1 , tbaixjudncrim1 ,
+          tbaixccrimje , tbaixcncrimje , tbaixextje , 
+          tbaixjudcrimnplje , tbaixjudncrimje) %>% 
+  
+  filter(sigla == "TJRO",  ano > 2014) %>% 
+   
+   mutate(ano = as.character(ano),xcn = (cnocrim2+ cnoncrim2+ cnrcrim2 + cnrncrim2 + cnocrimtr +
+                 cnoncrimtr + cnrcrimtr + cnrncrimtr + cnccrim1+ 
+                 cncncrim1 + cnextfisc1 + cnextnfisc1 + exejudcrimnpl1 + exejudcrimpl1 +
+                 exejudncrim1 + cnccrimje + cncncrimje + cnextje + 
+                 exejudcrimnplje + exejudncrimje), 
+ytbaix =( tbaixcrim +tbaixncrim2 + tbaixcrimtr +
+             tbaixncrimtr + tbaixccrim1 + tbaixcncrim1 +tbaixextfisc1 +
+        tbaixextnfisc1 + tbaixjudcrimnpl1 + tbaixjudcrimpl1 + tbaixjudncrim1 + tbaixccrimje + tbaixcncrimje +
+     tbaixextje + tbaixjudcrimnplje + tbaixjudncrimje), iad =formattable::percent(ytbaix/xcn)) %>% 
+   select(ano, iad, ytbaix,xcn)
+########tabela######### 
+ formattable(cn_x_tbaix)
+#######grafico######
+  str( cn_x_tbaix)
+  esquisse::esquisser()
+
+#----indice de concilinhação----------------------------------------------------
+
+
+esquisse :: esquisser()
+ggplot()
+
+ic <- jntj %>% filter(sigla == "TJRO", ano > 2014) %>%
+               select(sigla, ano, dech2, decncrim2 , sentexh1 , sentex1 ,sentch1 , sentc1, sentchje ,  sentcje,dechtr , dectr, sentexhje, sentexje)%>%
+               mutate(inc =formattable::percent((dech2+sentexh1+sentch1+sentchje+dechtr+ sentexhje)/(decncrim2+sentex1+sentc1+sentcje+dectr+sentexje))) %>% 
+               select(ano, inc)
+               
+#tabela do indice de conciliação#
+formattable(ic)
+
+
+###grafico do indice de conciliação%%%%%
+
+esquisse::esquisser()
+
+
+ggplot(ic) +
+ aes(x = ano, y = inc, fill = inc) +
+ geom_line(colour = "#112446") +
+ scale_fill_viridis_c(option = "magma", 
+ direction = 1) +
+ labs(x = "Ano", y = "Porcentagem", title = "Histórico Índice de Conciliação", 
+ subtitle = "Evolução") +
+ theme_bw() +
+ theme(legend.position = "top")

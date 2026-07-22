@@ -1,0 +1,3021 @@
+title: "Relatório do Plano de Sustentabilidade"
+author: 
+date: 
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+    html_document:
+    fig_width: 8
+    fig_height: 6
+---
+
+```{r, include=FALSE}
+# Configuração do ambiente
+Sys.setlocale("LC_TIME", "Portuguese_Brazil.UTF-8")
+Sys.setlocale("LC_CTYPE", "Portuguese_Brazil.UTF-8")
+
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(readxl)
+library(scales)
+library(cowplot)
+library(formattable)
+library(readr)
+library(kableExtra)
+
+options(OutDec = ".", scipen = 999)
+
+# Definição do diretório (substituir por um caminho relativo se possível)
+setwd("G:/Drives compartilhados/CIES/10. Plano de Logística Sustentável/Base do 7º Balanço da Sustentabilidade")
+
+# Leitura da base de dados
+ipls_atual <- read_xlsx('banco_pls_atual_2.xlsx', col_types = "text") 
+
+# Conversão da coluna "Valor" para numérica
+ipls_atual <- ipls_atual %>%
+  mutate(Valor = as.numeric(Valor),
+         Ano = as.integer(Ano))
+
+# Definição do ano de análise
+ano <- 2024 
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+<b>APRESENTAÇÃO</b> 
+
+```{r, include=FALSE}
+# Quadro de pessoal
+pessoal_TJRO <- ipls_atual %>%
+  filter(Ano == ano, str_detect(Mês_Ano, "Dez/")) %>%
+  separate(Mês_Ano, c("Mes", "Ano"), remove = FALSE) %>%
+  group_by(Ano, Indicador) %>%
+  summarise(total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = Indicador, values_from = total) %>%
+  mutate(Ano = as.numeric(Ano)) %>%
+  mutate_at(vars(-Ano), ~coalesce(., 0)) %>%
+  select(Ano, MagP, Serv, TPEfet, TPI, TPSV, TFAuxE,
+         TFAuxT, TFaux, TFAuxV, TFAuxJL, TFAuxSP, TFAuxC, TFAuxA, M2Total = `M²Total`) 
+
+# Tabela de força de trabalho
+Quadro_pessoal_TJRO <- pessoal_TJRO %>%
+  mutate(`Força de Trabalho` = MagP + TPEfet + TPI + TPSV + TFAuxT + TFAuxE + TFAuxJL + 
+                               TFAuxSP + TFAuxC + TFAuxV + TFAuxA,
+         `Servidores(as)` = TPEfet + TPI + TPSV,
+         `Trabalhadores(as) Auxiliares` = TFAuxT + TFAuxE + TFAuxJL + 
+                                          TFAuxSP + TFAuxC + TFAuxV + TFAuxA) %>%
+  rename(`Magistrados(as)` = MagP) %>%
+  select(Ano, `Magistrados(as)`, `Servidores(as)`, `Trabalhadores(as) Auxiliares`, `Força de Trabalho`) %>%
+  pivot_longer(cols = -Ano, names_to = "Indicador", values_to = "Total") %>%
+  select(-Ano)
+
+# Tabela de servidores
+Servidores <- pessoal_TJRO %>%
+  select(Ano, TPEfet, TPI, TPSV) %>%
+  mutate(`Servidores(as)` = TPEfet + TPI + TPSV) %>%
+  rename(`Efetivo` = TPEfet,
+         `Ingressou por cessão e requisição` = TPI,
+         `Comissionado sem vínculo efetivo` = TPSV) %>%
+  pivot_longer(cols = -Ano, names_to = "Indicador", values_to = "Total") %>%
+  select(-Ano)
+
+# Tabela de trabalhadores auxiliares
+Auxiliares <- pessoal_TJRO %>%
+  select(Ano, TFAuxT, TFAuxE, TFAuxJL, TFAuxSP, TFAuxC, TFAuxV, TFAuxA) %>%
+  mutate(`Trabalhadores(as) Auxiliares` = TFAuxT + TFAuxE + TFAuxJL + 
+                                          TFAuxSP + TFAuxC + TFAuxV + TFAuxA) %>%
+  rename(`Terceirizados` = TFAuxT, 
+         `Estagiários(as)` = TFAuxE,
+         `Juízes(as) Leigos(as)` = TFAuxJL,
+         `Serv. Jud. Privatizadas` = TFAuxSP,
+         `Conciliadores(as)` = TFAuxC, 
+         `Voluntários(as)` = TFAuxV,
+         `Aprendizes` = TFAuxA) %>%
+  pivot_longer(cols = -Ano, names_to = "Indicador", values_to = "Total") %>%
+  select(-Ano)
+
+# Espaço físico
+m2total_tj <- pessoal_TJRO %>%
+  select(Ano, M2Total) %>%
+  rename(`m² Total` = M2Total) %>%
+  mutate(`m² Total` = as.numeric(`m² Total`))
+
+#m2total_tj <- pessoal_TJRO %>%
+#  select(Ano, M2Total) %>%
+#  rename(`m² Total` = M2Total) %>%
+#  mutate(`m² Total` = format(`m² Total`, big.mark = ".", decimal.mark = ",")) %>%
+ # select(-Ano)
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+O Poder Judiciário brasileiro tem um papel fundamental no desenvolvimento sustentável do país. Através de sua gestão socioambiental, decisões e julgamentos, o judiciário pode garantir a proteção do meio ambiente e dos recursos naturais, bem como promover a justiça social e econômica, por meio de instrumentos que visem a promoção dessas ações. Assim, ele tem sido cada vez mais atuante na defesa do desenvolvimento sustentável, reconhecendo a importância das dimensões da sustentabilidade para garantir uma vida saudável e um futuro promissor para as gerações presentes e futuras.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Exemplo dessa atuação é a Resolução do Conselho Nacional de Justiça - CNJ n. 400/2021, que dispõe sobre a política de sustentabilidade no âmbito do Poder Judiciário nacional, que trouxe novos indicadores de desempenho para serem mensurados pelos tribunais e conselhos superiores, conceituando com maior amplitude as dimensões da sustentabilidade, o que corrobora o grau de amadurecimento nesta temática.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Posto isso, o Tribunal de Justiça do Estado de Rondônia - TJRO, diante de tais premissas, assumiu o compromisso de incluir práticas de sustentabilidade e implementar novos paradigmas em sua gestão, especialmente no biênio 2024-2026, que priorizem o conceito multidimensional da sustentabilidade.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Este relatório de desempenho anual do  Plano de Sustentabilidade do Poder Judiciário do Estado de Rondônia PS/TJRO, ciclo 2024 a 2026, apresenta os indicadores e metas socioambientais com suas performances no ano de 2024, por meio de uma análise comparativa entre as metas e resultados alcançados, com o intuito de promover informações socioambientais e econômicas adequadas à execução e ao monitoramento do plano, para o efetivo alcance dos objetivos pretendidos, bem como para o atendimento aos ditames da Resolução CNJ n. 400/2021 e artigo 170, VI, da Constituição da República Federativa do Brasil.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+São trazidas também as ações estabelecidas no PS, criadas para suportar o alcance das metas, bem como o status de execução que estas possuíam ao fim do exercício de 2024, ano base do presente relatório.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O texto encontra-se estruturado em temas, os mesmos apresentados pelo PS, e na mesma sequência para facilitação do entendimento das informações dispostas.
+</div>
+
+<br>    
+
+
+<div style="text-align: justify; text-indent: 2em;">
+<b>FORÇA DE TRABALHO E ESPAÇO FÍSICO</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Algumas variáveis coletadas e acompanhadas pela instituição não constituem-se propriamente em indicadores, mas seus valores contribuem para a constituição desses, motivo pelo qual estas são apresentadas as seguir:</div>
+
+Tabela 1. Força de trabalho
+```{r, echo=FALSE, message=FALSE, warning=FALSE} 
+formattable(Quadro_pessoal_TJRO)
+```
+
+Tabela 2. Quadro de Servidores(as)
+```{r, echo=FALSE, message=FALSE, warning=FALSE} 
+formattable(Servidores)
+```
+
+Tabela 3. Quadro da Força de Trabalho Auxiliar
+```{r, echo=FALSE, message=FALSE, warning=FALSE} 
+formattable(Auxiliares)
+```
+
+Tabela 4. Espaço físico do tribunal
+```{r, echo=FALSE, message=FALSE, warning=FALSE} 
+formattable(m2total_tj)
+```
+
+<br>
+
+<div style="text-align: justify; text-indent: 2em;">
+<b>1. PAPEL</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Com o objetivo de garantir o acompanhamento do consumo geral de papel após a implantação do Processo Judicial Eletrônico e dos processos administrativos eletrônicos, este tópico foi inserido no PS atualmente em curso.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Para auxiliar este controle, foi estabelecido o índice de racionalização do gasto com papel A4 per capita, indicador calculado a partir de uma relação, onde o gasto com papel próprio é dividido pela 
+força total de trabalho da instituição.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A este indicador foi relacionada a meta de redução anual de 5% do gasto de papel per capita. Em 2023 o gasto com papel próprio foi de R$159.773,12, resultando em um índice de R$36,81 por pessoa, de modo que, a meta constituir-se-ia em um índice de R$34,97 por pessoa.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Considerando que o gasto com papel próprio é a variável com maior oscilação, ela costuma ser a maior contribuinte para a variação do índice. No período em análise, esta variável apresentou redução, R$59.670,30, o indicador apresentou também uma redução de 37,15%, resultando em um índice de R$12,99%, de modo que, a meta foi atingida.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Para uma melhor visualização da evolução das variáveis que compõem o indicador (gasto) e de outras que são apenas acompanhadas pela instituição (consumo), os gráficos Consumo de papel em 2024 e Gasto com papel próprio em 2024 apresentam a quantidade de resmas de papel reciclado e não reciclado, próprio e contratado, tamanhos A4 e Ofício, requisitadas pelas unidades do Tribunal, bem como os valores despendidos com elas.</div> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Os valores constantes no gráfico Consumo de papel em 2024 referem-se à soma do consumo mensal de papel próprio e contratado. Ao fim de dezembro haviam sido consumidas 2.930 resmas de papel próprio, e 5.285 de contratado, resultando no consumo anual total de 8.215 resmas.</div> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Com relação às ações destinadas a auxiliar o alcance das metas, duas foram previstas, ambas com realização prevista para o período de 01/04/2024 a 31/12/2026. Destas, uma não foi iniciada até o momento, e a outra foi concluída, conforme pode-se observar na Tabela 5.</div>   
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(scales)
+
+#Gráfico 1. Consumo e gasto com papel próprio
+# Definição dos meses na ordem correta
+#meses_selecionados <- c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+# Função para gerar gráficos
+#gerar_grafico <- function(df, indicadores, cor, titulo, formatar_moeda = FALSE) {
+#  df_filtrado <- df %>%
+#    filter(Indicador %in% indicadores, Ano == 2024, Mês %in% meses_selecionados) %>%
+#    group_by(Mês) %>%
+#    summarise(Total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+#    filter(Total > 0)  # Remove valores zerados
+#
+#  if (nrow(df_filtrado) == 0) return(NULL)  # Retorna NULL se não houver dados para evitar erro
+
+#  df_filtrado$Mês <- factor(df_filtrado$Mês, levels = meses_selecionados)
+
+  # Definição do formato do eixo Y
+#  escala_y <- if (formatar_moeda) {
+#    label_dollar(prefix = "R$ ", big.mark = ".", decimal.mark = ",")
+#  } else {
+#    number_format(big.mark = ".", decimal.mark = ",")
+#  }
+
+#  ggplot(df_filtrado, aes(x = Mês, y = Total, fill = titulo)) +
+#    geom_col() +
+#    geom_text(aes(label = if (formatar_moeda) {
+#                paste0("R$ ", format(Total, big.mark = ".", decimal.mark = ","))
+#              } else {
+#                format(Total, big.mark = ".", decimal.mark = ",")
+#              }),
+#              vjust = -0.5, size = 4) + 
+#    scale_y_continuous(labels = escala_y) +
+#    scale_fill_manual(values = cor) +
+#    labs(title = titulo) +  # Apenas título do gráfico
+#    theme_minimal() +
+#    theme(
+#      plot.title = element_text(hjust = 0.5),  # Centraliza o título
+#      axis.title.y = element_blank(),  # Remove título do eixo Y
+#      axis.text.y = element_blank(),   # Remove números do eixo Y
+#      axis.ticks.y = element_blank(),  # Remove marcações do eixo Y
+#      panel.grid.major.y = element_blank(),  # Remove linhas de grade do eixo Y
+#      axis.title.x = element_blank(),  # Remove título do eixo X
+#      panel.grid.minor = element_blank(),
+#      panel.grid.major.x = element_blank(),
+#      panel.background = element_blank(),
+#      legend.position = "none")
+#}
+
+# Gráfico 1: Consumo de Papel (CPP + CPC)
+#grafico_CPP <- gerar_grafico(ipls_atual, c("CPP", "CPC"), "#1f78b4", "Consumo de Papel em 2024")
+
+# Gráfico 2: Gasto com Papel Próprio (GPP)
+#grafico_GPP <- gerar_grafico(ipls_atual, "GPP", "#33a02c", "Gasto com Papel Próprio em 2024", formatar_moeda #= TRUE)
+
+# Exibir gráficos apenas se houver dados
+#if (!is.null(grafico_CPP)) print(grafico_CPP)
+#if (!is.null(grafico_GPP)) print(grafico_GPP)
+```
+
+Tabela 5. Ações no tema papel 
+```{r, echo=FALSE}
+tabela <- data.frame(
+  Ação = c("A(01)", "A(02)"),
+  Descrição = c("Enviar relatório descritivo de gastos e consumo do papel A4 para unidades centrais apresentarem proposta de redução, semestralmente",
+                "Realizar campanha anual para conscientização de consumo consciente do papel"),
+  Início = c("01/04/2024", "01/04/2024"),
+  Fim = c("31/12/2026", "31/12/2026"),
+  Situação = c("Não Iniciada", "Concluída"))
+
+kable(tabela, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+<div style="text-align: justify; text-indent: 2em;">
+A campanha a que se refere à ação 02 foi realizada por meio das Olimpíadas da Sustentabilidade, sensibilização que envolveu diversos temas ligados à esta área. Quanto ao papel, a campanha abordou o impacto do consumo da instituição nos recursos naturais disponíveis, ainda que este venha diminuindo nos últimos anos.</div>
+
+<br>    
+  
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>2. COPOS DESCARTÁVEIS</b> 
+  
+<div style="text-align: justify; text-indent: 2em;">
+Para acompanhar a geração de resíduos oriundos do consumo de copos descartáveis, a instituição criou o índice de consumo de copos descartáveis, o qual é calculado com base em um percentual do número de centos de copos descartáveis utilizados na instituição anualmente em relação ao ano anterior.</div>
+  
+<div style="text-align: justify; text-indent: 2em;">
+A meta criada para este índice foi a de reduzir anualmente o consumo de copos descartáveis em 10%. Em 2023 foram utilizados 5.730 centos de copos descartáveis, em 2024 foram 6.573, um aumento de 12% (843 centos). Como houve um aumento, e não uma redução no número de centos utilizados, a meta não foi atingida.</div>
+  
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(scales)
+
+# Definição dos meses na ordem correta
+meses_selecionados <- c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+# Gráfico 3: Consumo de Copos (CC) 
+CC <- ipls_atual %>%
+  filter(Indicador == "CC", Ano == 2024, Mês %in% meses_selecionados) %>% 
+  group_by(Mês) %>%
+  summarise(Total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  filter(Total != 0)  
+CC$Mês <- factor(CC$Mês, levels = meses_selecionados)
+
+grafico_CC <- ggplot(CC, aes(x = Mês, y = Total, fill = "Papel - Consumo de copos")) +
+  geom_col() +
+  geom_text(aes(label = scales::comma(Total, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 4) + 
+  scale_y_continuous(labels = scales::number_format(big.mark = ".", decimal.mark = ",")) +
+  scale_fill_manual(values = "#e31a1c") +  
+  labs(title = "Gráfico 1. Consumo de Copos (em cento) em 2024") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),  # Centraliza o título
+    axis.title.y = element_blank(),  # Remove título do eixo Y
+    axis.text.y = element_blank(),   # Remove números do eixo Y
+    axis.ticks.y = element_blank(),  # Remove marcações do eixo Y
+    panel.grid.major.y = element_blank(),  # Remove linhas de grade do eixo Y
+    axis.title.x = element_blank(),  # Remove título do eixo X
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none"
+  )
+
+# Gráfico 4: Gasto com Copos (GC) 
+GC <- ipls_atual %>%
+  filter(Indicador == "GC", Ano == 2024, Mês %in% meses_selecionados) %>% 
+  group_by(Mês) %>%
+  summarise(Total = sum(Valor, na.rm = TRUE) / 1000, .groups = "drop") %>%  # Dividindo por 1.000
+  filter(Total != 0)  
+GC$Mês <- factor(GC$Mês, levels = meses_selecionados)
+
+grafico_GC <- ggplot(GC, aes(x = Mês, y = Total, fill = "Papel - Gasto com copos")) +
+  geom_col() +
+  geom_text(aes(label = sprintf("%.2f", Total)),  # Apenas 2 casas decimais
+            vjust = -0.5, size = 4) + 
+  scale_y_continuous(labels = function(x) sprintf("%.2f", x)) +  # Eixo Y com 2 casas decimais
+  scale_fill_manual(values = "#ff7f00") +  
+  labs(title = "Gráfico 2. Gasto com Copos (em milhares de reais) em 2024") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),  
+    axis.title.y = element_blank(),  
+    axis.text.y = element_blank(),   
+    axis.ticks.y = element_blank(),  
+    panel.grid.major.y = element_blank(),  
+    axis.title.x = element_blank(),  
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none"
+  )
+
+# Exibir os gráficos
+print(grafico_CC)
+```
+
+
+<div style="text-align: justify; text-indent: 2em;">
+Vale destacar que os copos descartáveis utilizados pelo TJRO são biodegradáveis, nesse caso, não são computados pelo CNJ. No entanto, o Poder Judiciário Rondoniense permanece com o compromisso de reduzir o consumo de copos descartáveis, até mesmo os utilizados pelo público externo.</div>
+  
+<div style="text-align: justify; text-indent: 2em;">
+Além do consumo de centos de copos, também são acompanhados os valores relativos aos gastos com estes produtos.</div>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+print(grafico_GC)
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Conforme pode-se observar na Tabela 6. Ações no tema copos descartáveis, também foram planejadas atividades para auxiliar o alcance das metas. São seis, todas com início previsto para o ano de publicação do plano, e duas com término previsto para o mesmo ano. Uma atividade não foi iniciada, uma encontra-se pendente, duas em andamento e uma concluída.</div>
+
+Tabela 6. Ações no tema copos descartáveis
+```{r, echo=FALSE}
+tabela2 <- data.frame(Ação = c("(A3)", "(A4)", "(A5)", "(A6)", "(A7)", "(A8)"),
+                      Descrição = c(
+                        "Instituir política com critérios para uso do copo descartável de papel biodegradável pelo público externo e canecas/copos permanentes pelo público interno nas Unidades do TJRO, até 2024.",
+                        "Realizar levantamento para identificar a média de atendimento ao público externo nos prédios para mensurar percentual do consumo de copos descartáveis biodegradáveis, até 2025.",
+                        "Realizar, anualmente, campanha de conscientização sobre o uso de copo descartável biodegradável até o ano de 2026.",
+                        "Implementar alternativas de reutilização dos copos descartáveis de papel biodegradável até 2026.",
+                        "Identificar ideias para otimizar o uso de copo descartável pelo público externo, até 2025.",
+                        "Criar projeto, em 2024, que reforce e estimule a utilização de canecas/copos próprios pelo corpo funcional."),
+                      Início = c("10/05/2024", "30/06/2024", "30/06/2024", "30/08/2024", "30/07/2024", "15/05/2024"),
+                      Fim = c("10/12/2024", "10/12/2025", "30/11/2026", "03/03/2026", "30/07/2025", "30/11/2024"),
+                      Situação = c("Pendente", "Não iniciada", "Concluída", "Em andamento", "Em andamento", "Concluído"))
+kable(tabela2, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+A ação (A5) Realizar, anualmente, campanha de conscientização sobre o uso de copo descartável biodegradável até o ano de 2026, teve seu objetivo atendido, em 2024, pela Campanha das Olimpíadas da Sustentabilidade, que contemplou a conscientização em relação a alguns dos assuntos previstos no PS, dentre eles o tópico Copos Descartáveis. A campanha contemplou ainda o reaproveitamento de copos de papel para o plantio de mudas, o que atendeu a ação A6.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A ação (A8) também foi alcançada pela mencionada campanha, inclusive contando com a realização de atividade intitulada: "Amigo Xícaro" que buscou fomentar a utilização de canecas reutilizáveis junto aos servidores (as) da Coordenadoria de Comunicação Institucional - CCOM.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Para a ação (A7) foram realizados encontros com assistentes de direção dos fóruns e Secretaria Administrativa, para alinhar o uso dos copos pelo público externo. Decidiu-se que a disponibilização será feita a partir de solicitações nas recepções das unidades prediais (0019520-76.2024.8.22.8000).</div>
+
+
+<br> 
+  
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>3. ÁGUA ENVASADA EM EMBALAGEM PLÁSTICA</b> 
+  
+<div style="text-align: justify; text-indent: 2em;">
+O consumo de água envasada em embalagens descartáveis é responsável por boa parte da geração de resíduos de plástico que muitas vezes acabam sendo destinados de modo inadequado. Por este motivo, o plano traz esta questão. Busca-se acompanhar a geração de resíduos oriundos desta fonte, para assim tomar decisões que caminhem no sentido da redução da utilização deste produto.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+São acompanhados tanto o consumo em embalagens destinadas a uso individual (copos e garrafas) quanto as destinadas ao uso coletivo (10 e 20 litros).</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Para a realização do acompanhamento, foi criado o índice de racionalização de água envasada descartável per capta, o qual é calculado dividindo-se o número total de embalagens descartáveis de água, utilizadas no decorrer de um ano, pela força de trabalho total da instituição.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Como meta, definiu-se a manutenção do índice em 0,1 embalagem por pessoa ao ano. Em 2024 foram utilizadas 1.060 embalagens descartáveis de água, número que resultou em um índice de 0,23 embalagens utilizadas por pessoa, uma garrafa para cada cinco pessoas aproximadamente, 2,3  vezes o valor estabelecido para a meta, de modo que esta não foi alcançada.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Além das variáveis integrantes do indicador, outras ainda são monitoradas e têm o seu desempenho anual apresentado como o consumo e gasto de embalagens descartáveis e retornáveis que trouxe como resultados o valor de 1.060 unidades de consumo  de embalagens descartáveis para água mineral, representando o valor de R$ 1.486,60 quanto ao gasto com água mineral em embalagens descartáveis. Já as embalagens retornáveis apresenta-se como consumo o quantitativo de 36702 unidades de embalagens plásticas retornáveis para água mineral envasada requisitada pelo tribunal, tendo como despesas a essas aquisições o valor de R$307.569,66.</div>
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(scales)
+
+# Definição dos meses na ordem correta
+meses_selecionados <- c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+# Gráfico 5: Consumo de Embalagem Descartável (CED)
+CED <- ipls_atual %>%
+  filter(Indicador == "CED", Ano == 2024, Mês %in% meses_selecionados) %>% 
+  group_by(Mês) %>%
+  summarise(Total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  filter(Total != 0) %>%
+  arrange(match(Mês, meses_selecionados))  
+
+# Garantir que Mês seja fator e esteja ordenado corretamente
+CED$Mês <- factor(CED$Mês, levels = meses_selecionados)
+
+grafico_CED <- ggplot(CED, aes(x = Mês, y = Total, fill = "Papel - Embalagem Descartável")) +
+  geom_col() +
+  geom_text(aes(label = scales::comma(Total, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 4) + 
+  scale_y_continuous(labels = scales::number_format(big.mark = ".", decimal.mark = ",")) +
+  scale_fill_manual(values = "#1f77b4") +  
+  labs(title = "Gráfico 3. Consumo de Embalagem Descartável em 2024") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),  # Centraliza o título
+    axis.title.y = element_blank(),  # Remove título do eixo Y
+    axis.text.y = element_blank(),   # Remove números do eixo Y
+    axis.ticks.y = element_blank(),  # Remove marcações do eixo Y
+    panel.grid.major.y = element_blank(),  # Remove linhas de grade do eixo Y
+    axis.title.x = element_blank(),  # Remove título do eixo X
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none"
+  )
+
+# Gráfico 6: Consumo de Embalagem Retornável (CER)
+CER <- ipls_atual %>%
+  filter(Indicador == "CER", Ano == 2024, Mês %in% meses_selecionados) %>% 
+  group_by(Mês) %>%
+  summarise(Total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  filter(Total != 0)  
+CER$Mês <- factor(CER$Mês, levels = meses_selecionados)
+
+grafico_CER <- ggplot(CER, aes(x = Mês, y = Total, fill = "Papel - Embalagem Retornável")) +
+  geom_col() +
+  geom_text(aes(label = scales::comma(Total, big.mark = ".", decimal.mark = ",")), 
+            vjust = -0.5, size = 4) + 
+  scale_y_continuous(labels = scales::number_format(big.mark = ".", decimal.mark = ",")) +
+  scale_fill_manual(values = "#2ca02c") +  
+  labs(title = "Gráfico 4. Consumo de Embalagem Retornável em 2024") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),  
+    axis.title.y = element_blank(),  
+    axis.text.y = element_blank(),   
+    axis.ticks.y = element_blank(),  
+    panel.grid.major.y = element_blank(),  
+    axis.title.x = element_blank(),  
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "none")
+
+# Exibir os gráficos
+print(grafico_CED)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(grafico_CER)
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Como nos demais temas, definiu-se a realização de uma agenda que colaborasse para o alcance das metas. Uma atividade encontra-se em andamento e a outra ainda não foi iniciada, no entanto, está dentro do prazo estipulado.</div>
+
+Tabela 7. Ações no tema água envasada em embalagem plástica 
+```{r, echo=FALSE}
+tabela3 <- data.frame(
+  Ação = c("(A9)", "(A10)"),
+  Descrição = c(
+    "Realizar diagnóstico das atividades que estão consumindo água envasada de 500ml para identificar ações, até 2025.",
+    "Realizar estudo de viabilidade que possa subsidiar a substituição (parcial ou integral) dos bebedouros por purificadores de água, até 2026."),
+  Início = c("01/10/2024", "01/01/2025"),
+  Fim = c("31/12/2026", "30/01/2026"),
+  Situação = c("Em andamento", "Não iniciada"))
+
+kable(tabela3, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+O diagnóstico tratado na ação A9 foi realizado e encontra-se evidenciado em Relatório constante no  processo SEI 0020909-96.2024.8.22.8000, estando aguardando no momento a realização da próxima fase  - Definir, através de Resolução Interna, os critérios e diretrizes de consumo - que é a última etapa da ação e possui prazo de realização até 31/12/2026. </div>
+
+<br>    
+  
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>4. IMPRESSÃO</b> 
+  
+<div style="text-align: justify; text-indent: 2em;">
+O tema impressão integra o PS 2024-2026 por objetivar-se uma maior eficiência na gestão das impressões, uma vez que, com a implantação dos processos administrativos e judiciais eletrônicos espera-se uma redução no número de impressões, com uma consequente redução no número de equipamentos e suprimentos. </div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Assim, foram desenvolvidos dois indicadores: o índice de equipamentos de impressão per capita e o índice de quantidade de impressão per capita.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O índice de quantidade de equipamentos de impressão per capita traduz-se na razão entre a quantidade de equipamentos de impressão e o número de trabalhadores do órgão. A meta definida foi uma redução anual de 2% na quantidade de equipamentos.</div>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+equip_imp_pc <- ipls_atual %>% 
+  filter(Ano == 2024, str_detect(Mês_Ano, "/")) %>%
+  group_by(Mês_Ano, Indicador) %>% 
+  summarise(total = sum(Valor), .groups = "drop") %>% 
+  spread(Indicador, total) %>%
+  select(Mês_Ano, `Quantidade de equipamentos de impressão` = QEI, FTT) %>% 
+  drop_na() %>% 
+  mutate(`Per Capita` = `Quantidade de equipamentos de impressão` / FTT) %>%
+  mutate(Mês_Ano = factor(Mês_Ano, levels = c("Jan/2024", "Fev/2024", "Mar/2024", "Abr/2024", 
+                                              "Mai/2024", "Jun/2024", "Jul/2024", "Ago/2024", 
+                                              "Set/2024", "Out/2024", "Nov/2024", "Dez/2024"))) %>% arrange(Mês_Ano)
+
+ggplot(equip_imp_pc, aes(x = Mês_Ano, y = `Per Capita`)) +
+  geom_col(fill = "#D2B48C") +  # Bege escuro
+  labs(title = "Gráfico 5. Quantidade de Equipamentos de Impressão Per Capita (2024)",
+       x = "Mês/Ano",
+       y = NULL) +  
+  theme_minimal() +
+  theme(panel.grid = element_blank(),  
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_blank(),  
+        axis.ticks.y = element_blank(),  
+        axis.line.y = element_blank(),
+        plot.title = element_text(size = 14, hjust = 0.5)) +  # Centraliza o título
+  geom_text(aes(label = round(`Per Capita`, 2)), vjust = -0.5, size = 4)
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Em dezembro de 2024 aferiu-se, como quantitativo total de equipamentos de impressão, 670 equipamentos, sendo: 300 equipamentos próprios e 370 equipamentos provenientes de contrato de terceirização. Houve a redução de 118 equipamentos de impressão.</div>
+
+Gráfico 4. Evolução das impressões e equipamentos de impressão no tribunal\n") ### NÃO FOI PEDIDO!
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+# IMPRESSÃO 
+# Padroniza os nomes dos meses
+meses <- c("Jan" = "01", "Fev" = "02", "Mar" = "03", "Abr" = "04", "Mai" = "05", "Jun" = "06",
+           "Jul" = "07", "Ago" = "08", "Set" = "09", "Out" = "10", "Nov" = "11", "Dez" = "12")
+
+# Gráfico 4. Evolução das impressões e equipamentos de impressão no tribunal
+equip_imp <- ipls_atual %>% 
+  filter(Ano == 2024) %>%
+  separate(Mês_Ano, c("Mes", "Ano"), sep = "/") %>%  
+  mutate(
+    Mes = meses[Mes],
+    Mes_Ano = paste0(names(meses)[match(Mes, meses)], "/", Ano),
+    Mes_Ano = factor(Mes_Ano, levels = paste0(names(meses), "/2024"))) %>%
+  group_by(Ano, Mes_Ano, Indicador) %>% 
+  summarise(total = sum(Valor), .groups = "drop") %>%
+  spread(Indicador, total) %>%
+  mutate(Ano = as.numeric(Ano)) %>%
+  select(Ano, Mes_Ano, `Quantidade de equipamentos de impressão` = QEI) %>%
+  drop_na() %>%  
+  arrange(Mes_Ano) %>%
+  select(-Ano)
+
+ggplot(equip_imp, aes(x = Mes_Ano, y = `Quantidade de equipamentos de impressão`)) +
+  geom_bar(stat = "identity", fill = "#FF7F0E", show.legend = FALSE) +  
+  geom_text(aes(label = `Quantidade de equipamentos de impressão`),  
+            vjust = -0.3,  
+            size = 4,  
+            color = "black") +  
+  scale_y_continuous(labels = scales::label_number(big.mark = ".", decimal.mark = ",")) +  
+  labs(title = "Gráfico 6. Quantidade de equipamentos de impressão") +  # Mantém apenas o título do gráfico
+  theme_minimal() +
+  theme(
+    axis.text.y = element_blank(),  # Remove rótulos do eixo Y
+    axis.ticks.y = element_blank(), # Remove marcações do eixo Y
+    axis.title = element_blank(),   # Remove títulos dos eixos
+    plot.title = element_text(size = 14, hjust = 0.5), # Centraliza o título
+    panel.grid.major.y = element_blank(),  # Remove grade do eixo Y
+    panel.grid.minor.y = element_blank()   # Remove grade menor do eixo Y
+    ,panel.grid.major = element_blank(),  # Remove grade maior
+    panel.grid.minor = element_blank())   # Remove grade menor
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Considerando que o quantitativo total da força de trabalho aferido em 31 de dezembro de 2024 foi de 4.593 colaboradores(a), o índice de quantidade de equipamentos de impressão per capita foi de 0,15 equipamentos por pessoa, aproximadamente um equipamento para cada seis pessoas, 0,03 menor que o índice observado em 2023 (0,18). Sendo possível afirmar, deste modo, que a meta do referido índice foi alcançada, já que houve uma redução de 16,66% no índice. </div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O índice de quantidade de impressão per capita é calculado a partir da razão entre a quantidade de impressões e o número de trabalhadores da instituição. Como meta para este indicador definiu-se uma redução de 2% em relação ao ano anterior.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Constatou-se a realização de 6.839.932 de impressões no período avaliado e um índice de 1.489 por impressões por pessoa, 43,80% maior que o índice aferido no ano de 2023. Portanto, a meta de redução de impressões não foi atingida, pelo contrário, houve um crescimento representativo no número de impressões.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O gasto com contratos de terceirização de impressão também tem o seu desempenho acompanhado e pode ser verificado na Tabela 8.</div>
+
+Tabela 8. Gasto com contratos de terceirização de impressão
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+# IMPRESSÃO 
+# Tabela 8. Gasto com contratos de terceirização de impressão
+meses <- c("Jan" = "01", "Fev" = "02", "Mar" = "03", "Abr" = "04", "Mai" = "05", "Jun" = "06",
+           "Jul" = "07", "Ago" = "08", "Set" = "09", "Out" = "10", "Nov" = "11", "Dez" = "12")
+
+gasto_imp <- ipls_atual %>% 
+  filter(Ano == 2024) %>% 
+  mutate(Mês_Ano = str_trim(Mês_Ano)) %>%  
+  separate(Mês_Ano, c("Mes", "Ano"), sep = "/") %>%  
+  mutate(
+    Mes = meses[Mes], 
+    Mes_Ano = paste0(names(meses)[match(Mes, meses)], "/", Ano),
+    Mes_Ano = factor(Mes_Ano, levels = paste0(names(meses), "/2024"))) %>%
+  group_by(Ano, Mes_Ano, Indicador) %>% 
+  summarise(total = sum(Valor), .groups = "drop") %>%
+  spread(Indicador, total) %>%
+  mutate(Gasto_Contratos = GCO) %>% 
+  select(Ano, Mes_Ano, `Gasto com contratos de terceirização de impressão` = Gasto_Contratos) %>%
+  mutate(
+    `Gasto com contratos de terceirização de impressão` = format(round(`Gasto com contratos de terceirização de impressão`, 2), big.mark = ".", decimal.mark = ",")) %>%
+  drop_na() %>% 
+  filter(`Gasto com contratos de terceirização de impressão` != 0) %>%  
+  arrange(Mes_Ano) %>% 
+  select(-Ano)
+formattable(gasto_imp)
+```
+
+Tabela 9. Quantidade de Impressões
+```{r, echo=FALSE, message=FALSE, warning=FALSE} 
+# Tabela 9. Quantidade de Impressões
+qip <- ipls_atual %>% 
+  filter(Ano == 2024) %>% 
+  mutate(Mês_Ano = str_trim(Mês_Ano)) %>%  
+  separate(Mês_Ano, c("Mes", "Ano"), sep = "/") %>%  
+  mutate(
+    Mes = meses[Mes], 
+    Mes_Ano = paste0(names(meses)[match(Mes, meses)], "/", Ano),
+    Mes_Ano = factor(Mes_Ano, levels = paste0(names(meses), "/2024"))) %>%
+  group_by(Ano, Mes_Ano, Indicador) %>% 
+  summarise(total = sum(Valor), .groups = "drop") %>%
+  spread(Indicador, total) %>% 
+  mutate(QIP = QI / FTT) %>% 
+  select(Ano, Mes_Ano, `Quantidade de impressões per capita` = QIP, `Quantidade de impressões` = QI) %>%  
+  mutate(
+    `Quantidade de impressões per capita` = format(round(`Quantidade de impressões per capita`, 2), big.mark = ".", decimal.mark = ","),
+    `Quantidade de impressões` = format(round(`Quantidade de impressões`, 2), big.mark = ".", decimal.mark = ",")) %>%
+  drop_na() %>%  
+  arrange(Mes_Ano) %>% select(-Ano)
+formattable(qip)
+
+# Gráfico 1: Quantidade de impressões per capita (barras verdes)
+#ggplot(qip, aes(x = Mes_Ano, y = `Quantidade de impressões per capita`)) +
+#  geom_bar(stat = "identity", fill = "#2E8B57", show.legend = FALSE) +  # Cor verde (SeaGreen)
+#  geom_text(aes(label = `Quantidade de impressões per capita`),
+#            vjust = -0.3,  
+#            size = 4,  
+#            color = "black") +  
+#  labs(title = "Quantidade de Impressões per Capita em 2024") +  
+#  theme_minimal() +
+#  theme(
+#    axis.text.y = element_blank(),  # Remove rótulos do eixo Y
+#    axis.ticks.y = element_blank(), # Remove marcações do eixo Y
+#    axis.title.y = element_blank(), # Remove título do eixo Y
+#    axis.text.x = element_text(angle = 45, hjust = 1),  # Mantém o eixo X
+#    axis.title.x = element_blank(), # Remove título do eixo X
+#    plot.title = element_text(size = 14, face = "bold", hjust = 0.5), # Centraliza o título
+#    panel.grid.major.y = element_blank(),  # Remove grade do eixo Y
+#    panel.grid.minor = element_blank() # Remove grade menor
+#    ,panel.grid = element_blank())
+```
+
+
+<div style="text-align: justify; text-indent: 2em;">
+Das cinco atividades previstas para apoiar os resultados, apenas duas possuíam início ainda em 2024, com prazos de conclusão previstos para 2026. Apenas a ação A14 Aperfeiçoar de forma contínua o outsourcing de impressão, bem como sua implementação em todas as comarcas e a A15 Realizar campanha para divulgar política e boas práticas de redução da impressão. Entretanto, uma ação adicional foi realizada, a solicitação de apresentação de justificativa para a manutenção de mais de uma impressora nas unidades, com consequente orientação acerca do processo de devolução àquelas unidades que se dispuseram a desfazer-se de algum equipamento.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Destaca-se que, assim como ocorreu em outros temas, a campanha de sensibilização sobre o uso de boas práticas de redução da impressão ocorreu por meio das Olimpíadas da Sustentabilidade. </div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A Tabela 10, detalha as ações relacionadas ao tema, que são cinco: duas em andamento, uma concluída e duas não iniciadas.</div>
+
+Tabela 10. Ações no tema Impressão 
+```{r, echo=FALSE}
+tabela4 <- data.frame(
+  Ação = c("(A11)", "(A12)", "(A13)", "(A14)", "(A15)"),
+  Descrição = c(
+    "Instituir Política de Impressão com critérios e responsabilidades, até 2025.",
+    "Identificar e substituir procedimentos administrativos internos que exigem impressão de formulários de papel para o EGESP e/ou SEi, até 2026.",
+    "Identificar atividades na área finalística com potencial de impressão do papel e instituir alternativas de redução, até 2026.",
+    "Aperfeiçoar de forma contínua o outsourcing de impressão, bem como sua implementação em todas as comarcas.",
+    "Realizar campanha para divulgar política e boas práticas de redução da impressão."),
+  Início = c("01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024"),
+  Fim = c("31/12/2025", "31/12/2026", "31/12/2026", "31/12/2026", "31/12/2026"),
+  Situação = c("Em andamento", "Não iniciada", "Não iniciada", "Em andamento", "Não iniciada"))
+kable(tabela4, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<br>    
+  
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>5. ENERGIA ELÉTRICA</b> 
+  
+<div style="text-align: justify; text-indent: 2em;">
+O tema energia elétrica foi inserido no contexto do planejamento para possibilitar o acompanhamento do consumo e gastos com energia elétrica no PJRO. Tal controle, por sua vez, possibilitaria uma análise acerca de estratégias de redução de consumo, bem como ofereceria subsídios a decisões de substituição de determinadas fontes de energia por outras mais sustentáveis.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O indicador relacionado é o Índice de racionalização do consumo de energia elétrica e como meta fixou-se a redução anual do consumo de energia elétrica (kWh) fornecido pela concessionária em 2%. O índice é representado pelo consumo total de energia elétrica no decorrer de um ano e leva em consideração todas as unidades prediais do PJRO.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A soma total dos quilowatt-hora das edificações desta instituição foi de 7.245.942,74 kWh. Considerando o consumo de 2023, houve uma redução de 3,23%, acima, portanto, da meta estabelecida.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Os gráficos a seguir apresentam a evolução do consumo e gasto de energia elétrica da instituição: </div>
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+# Definir a ordem correta dos meses
+ordem_meses <- c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+                 "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+# Filtrar e preparar os dados
+Energia_Eletrica_Consumo <- ipls_atual %>%
+  filter(Ano == 2024, Indicador == "CEE") %>%   
+  group_by(Mês_Ano) %>%
+  summarise(Total_Valor = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    Mês = factor(str_sub(Mês_Ano, 1, 3), levels = ordem_meses),  
+    Total_Valor_formatado = scales::comma(Total_Valor, big.mark = ".", decimal.mark = ",")) %>%
+  arrange(Mês)
+
+# Criar o gráfico
+ggplot(Energia_Eletrica_Consumo, aes(x = Mês, y = Total_Valor)) +
+  geom_col(fill = "skyblue", width = 0.7) +  
+  geom_text(aes(label = Total_Valor_formatado), vjust = -0.5, color = "black", size = 4) +  
+  labs(title = "Gráfico 7. Evolução do Consumo de Energia Elétrica em 2024") +  
+  theme_minimal() +  
+  scale_x_discrete(limits = ordem_meses) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  
+    axis.title = element_blank(),  
+    plot.title = element_text(size = 14, hjust = 0.5),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank(),  
+    axis.text.y = element_blank(),  
+    axis.ticks.y = element_blank())
+
+# GRÁFICO DE GASTOS
+
+# Definir a ordem correta dos meses
+ordem_meses <- c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+                 "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+# Filtrar e preparar os dados
+Energia_Eletrica_Gasto <- ipls_atual %>%
+  filter(Ano == 2024, Indicador == "GEE") %>%  
+  group_by(Mês_Ano) %>%
+  summarise(Total_Valor = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    Mês = factor(str_sub(Mês_Ano, 1, 3), levels = ordem_meses),  
+    Total_Valor_formatado = scales::comma(Total_Valor, big.mark = ".", decimal.mark = ",")) %>%
+  arrange(Mês)
+
+# Criar o gráfico
+ggplot(Energia_Eletrica_Gasto, aes(x = Mês, y = Total_Valor)) +
+  geom_col(fill = "lightgreen", width = 0.7) +  
+  geom_text(aes(label = Total_Valor_formatado), vjust = -0.3, color = "black", size = 4) +  
+  labs(title = "Gráfico 8. Evolução do Gasto de Energia Elétrica em 2024") +  
+  theme_minimal() +  
+  scale_x_discrete(limits = ordem_meses) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  
+    axis.title = element_blank(),  
+    plot.title = element_text(size = 14, hjust = 0.5),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank(),  
+    axis.text.y = element_blank(),  
+    axis.ticks.y = element_blank())
+```
+
+
+<div style="text-align: justify; text-indent: 2em;">
+A Tabela 11. Indicadores de Energia Elétrica apresenta a evolução temporal dos valores relativos a energia elétrica, trazendo como dado adicional os valores relativos a geração de energia fotovoltaica, a qual teve significativo incremento (57,43%):</div>
+
+Tabela 11. Indicadores de Energia Elétrica
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+# Energia elétrica 
+Energia_TJRO <- ipls_atual %>%
+  select(Ano, Indicador, Valor) %>%
+  filter(Indicador %in% c("CEE", "CRE", "GEE", "GRE", "Uso de energia alternativa", "NT", "FTT"), Ano == 2024) %>%
+  group_by(Ano, Indicador) %>%
+  summarise(Total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  mutate(Ano = as.double(Ano)) %>%
+  left_join(m2total_tj, by = "Ano") %>%  
+  select(-`m² Total`, -Ano) %>%  
+  mutate(Indicador = case_when(
+    Indicador == "NT" ~ "Negociação tarifária",
+    Indicador == "GRE" ~ "Gasto com energia elétrica por m²",
+    Indicador == "GEE" ~ "Gasto com energia elétrica",
+    Indicador == "CRE" ~ "Consumo de energia elétrica por m²",
+    Indicador == "CEE" ~ "Consumo de energia elétrica",
+    Indicador == "FTT" ~ "Força de trabalho total",  
+    TRUE ~ Indicador)) %>%
+  mutate(Total = round(Total, 2))
+
+Energia_TJRO$Total <- formatC(Energia_TJRO$Total, format = "f", big.mark = ".", decimal.mark = ",", digits = 2)
+
+formattable(Energia_TJRO)
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Das quatro ações previstas, apenas três possuíam início ainda em 2024, com prazos de conclusão previstos para 2025 e 2026. Contudo, todas foram concluídas ainda em 2024. A Tabela 12. Ações no tema energia elétrica às detalha:</div>
+
+Tabela 12. Ações no tema energia elétrica 
+```{r, echo=FALSE}
+tabela5 <- data.frame(
+  Ação = c("(A16)", "(A17)", "(A18)", "(A19)"),
+  Descrição = c(
+    "Incluir nos projetos de prédios novos aproveitamento de iluminação natural como critério de sustentabilidade.",
+    "Criar instrumento para monitorar e avaliar de forma permanente a utilização de energia solar no âmbito do Poder Judiciário do Estado de Rondônia.",
+    "Realizar manutenções preventivas periódicas e dar continuidade à implantação de soluções mais eficientes, tais como iluminação LED e sistemas de climatização e equipamentos energéticos modernos e econômicos.",
+    "Promover campanha que oriente o corpo funcional a desligar os equipamentos de informática e iluminação após o expediente."),
+  Início = c("01/04/2024", "01/04/2024", "01/04/2024", "01/03/2025"),
+  Fim = c("31/12/2026", "31/12/2025", "31/12/2026", "31/08/2025"),
+  Situação = c("Concluída", "Concluída", "Concluído", "Concluído"))
+kable(tabela5, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Destaca-se que, assim como ocorreu em outros temas, a campanha de sensibilização sobre o uso racional de energia elétrica ocorreu por meio das Olimpíadas da Sustentabilidade.</div>
+
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>6. ÁGUA E ESGOTO</b> 
+  
+<div style="text-align: justify; text-indent: 2em;">
+A água é um recurso finito e essencial à vida, motivo que torna essencial seu uso consciente. Assim, para verificar o consumo e gastos com água e esgoto o PS traz tópico relacionado. Pois assim torna-se possível verificar a possibilidade de eventuais ajustes e efetividade de ações de sustentabilidade.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O índice de consumo de água em m³ é o indicador utilizado para a verificação do desempenho neste tema. Como meta, definiu-se a redução anual de 2% do consumo de água. Em 2023 foram consumidos 19.969 m³ de água pelas edificações da instituição. Em 2024 verificou-se um consumo de 20.514,05 m³, 3% superior ao observado no ano anterior (545,05 m³). Como houve um aumento e não uma redução no consumo, a meta não foi atingida.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Além das variáveis integrantes do indicador, outras ainda são analisadas e têm o seu desempenho anual apresentado nos gráficos: Consumo de água e Gasto em água:</div>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+# Definir a ordem correta dos meses
+ordem_meses <- c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+                 "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+# Filtrar e preparar os dados
+consumo_agua <- ipls_atual %>%
+  filter(Indicador == "CA", Ano == 2024) %>%
+  group_by(Ano, Mês_Ano) %>%
+  summarise(Total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    Indicador = "Consumo de Água",
+    Mês = factor(str_sub(Mês_Ano, 1, 3), levels = ordem_meses),  
+    Total_formatado = format(Total, big.mark = ".", decimal.mark = ",", nsmall = 0)  
+  ) %>%
+  arrange(Mês)
+
+# Criar o gráfico
+ggplot(consumo_agua, aes(x = Mês, y = Total)) +
+  geom_col(fill = "skyblue", width = 0.7) +
+  geom_text(aes(label = Total_formatado), vjust = -0.5, size = 3, color = "black") +  
+  labs(title = "Gráfico 9. Evolução do Consumo de Água em 2024") +  
+  theme_minimal() +  
+  scale_x_discrete(limits = ordem_meses) +  
+  theme(
+    plot.title = element_text(size = 14, hjust = 0.5),  # Centraliza o título
+    axis.title.y = element_blank(),  # Remove o título do eixo Y
+    axis.text.x = element_text(angle = 45, hjust = 1),  
+    axis.text.y = element_blank(),  
+    axis.ticks.y = element_blank(), 
+    panel.grid = element_blank(),  
+    legend.position = "none")
+
+# Definir a ordem correta dos meses
+ordem_meses <- c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+                 "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+# Filtrar e preparar os dados
+gasto_agua <- ipls_atual %>%
+  filter(Indicador == "GA", Ano == 2024) %>%
+  group_by(Ano, Mês_Ano) %>%
+  summarise(Total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    Indicador = "Gasto em Água",
+    Mês = factor(str_sub(Mês_Ano, 1, 3), levels = ordem_meses),  
+    Total_formatado = format(Total, big.mark = ".", decimal.mark = ",", nsmall = 2)) %>% arrange(Mês)
+
+# Criar o gráfico
+ggplot(gasto_agua, aes(x = Mês, y = Total)) +
+  geom_col(fill = "darkorange", width = 0.7) +
+  geom_text(aes(label = Total_formatado), vjust = -0.5, size = 3, color = "black") +  
+  labs(title = "Gráfico 10. Evolução do Gasto de Água em 2024") +  
+  theme_minimal() +  
+  scale_x_discrete(limits = ordem_meses) +  
+  theme(
+    plot.title = element_text(size = 14, hjust = 0.5),  # Centraliza o título
+    axis.title.y = element_blank(),  # Remove o título do eixo Y
+    axis.text.x = element_text(angle = 45, hjust = 1),  
+    axis.text.y = element_blank(),  
+    axis.ticks.y = element_blank(), 
+    panel.grid = element_blank(),  
+    legend.position = "none")
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Para auxiliar o alcance das metas foram definidas seis ações, destas, apenas duas tiveram início definido para 2024, tendo a etapa relativa a este ano cumprida, duas estão em andamento e as demais possuem início previsto para meados de 2025 e, portanto, não foram iniciadas. </div>
+
+Tabela 13. Ações no tema Água e Esgoto 
+```{r, echo=FALSE}
+tabela6 <- data.frame(
+  Ação = c("(A20)", "(A21)", "(A22)", "(A23)", "(A24)", "(A25)"),
+  Descrição = c(
+    "Realizar estudo de viabilidade de substituição da água consorciada pela captação de água subterrânea em pelo menos 05 Comarcas do Poder Judiciário do Estado de Rondônia até 2026.",
+    "Manter nos projetos de prédios novos a previsão de sistemas de captação de água pluvial e reaproveitamento de água, atendendo a critérios de sustentabilidade.",
+    "Realizar estudo, em pelo menos 05 Comarcas, para verificar se as unidades prediais necessitam de adequação ou modernização dos sistemas de tratamento de esgoto.",
+    "Criar portfólio das unidades prediais identificando tipo do sistema de captação da água para consumo, tipo do sistema de tratamento de esgoto, tipos de sistema de reaproveitamento e reuso da água.",
+    "Realizar manutenções preventivas periódicas e dar continuidade à implantação de soluções mais eficientes, tais como descargas e torneiras, bem como realizar inspeção das instalações hidrossanitárias.",
+    "Realizar campanha anual de conscientização do uso da água e reaproveitamento da água."),
+  Início = c("01/03/2025", "20/05/2025", "08/08/2024", "01/04/2025", "01/04/2024", "02/04/2024"),
+  Fim = c("12/12/2026", "12/12/2026", "12/12/2026", "12/12/2026", "12/12/2026", "30/11/2026"),
+  Situação = c("Não iniciada", "Em andamento", "Não iniciado", "Em andamento", "Concluída", "Concluída"))
+kable(tabela6, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Sobre a ação A21, 3 Unidades do TJRO já possuem reservatórios para captação de água da chuva, sendo que um prédio já possui esse sistema implantado.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+No atendimento a ação A23 foi iniciado o levantamento e compilação de informações para a criação de Portfolio das unidades prediais identificando tipo do sistema de captação da água para consumo, tipo do sistema de tratamento de esgoto, tipos de sistema de reaproveitamento e reuso da água.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Assim como no tema copos descartáveis, a ação que garantiu a conscientização acerca do consumo consciente de água foi a Olimpíadas da Sustentabilidade.</div>
+
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>7. GESTÃO DE RESÍDUOS </b> 
+  
+<div style="text-align: justify; text-indent: 2em;">
+A gestão de resíduos integra o planejamento em sustentabilidade em razão da necessidade de seu acompanhamento pela instituição, para estimular a redução da geração de resíduos e aumentar sua destinação ambientalmente correta.</div>
+
+Tabela 14. Materiais destinados à Reciclagem
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+Residuos_2024 <- ipls_atual %>%
+  filter(grepl("2024", Mês_Ano)) %>%
+  mutate(
+    Valor = as.numeric(gsub("[^0-9.-]", "", Valor)),  
+    `Mês_Ano` = factor(Mês_Ano, levels = c("Jan/2024", "Fev/2024", "Mar/2024", "Abr/2024", "Mai/2024", 
+                                           "Jun/2024", "Jul/2024", "Ago/2024", "Set/2024", "Out/2024", 
+                                           "Nov/2024", "Dez/2024"))) %>% 
+  group_by(Mês_Ano) %>%
+  summarise(
+     CGe = sum(Valor[Indicador == "GRef"], na.rm = TRUE),
+     DEl = sum(Valor[Indicador == "GConst"], na.rm = TRUE),
+     DImp = sum(Valor[Indicador == "DImp"], na.rm = TRUE),
+     DLP = sum(Valor[Indicador == "DLP"], na.rm = TRUE),
+     DMt = sum(Valor[Indicador == "DMt"], na.rm = TRUE),
+     DOB = sum(Valor[Indicador == "DOB"], na.rm = TRUE),
+     DPa = sum(Valor[Indicador == "DPa"], na.rm = TRUE),
+     DPB = sum(Valor[Indicador == "DPB"], na.rm = TRUE),
+     DPl = sum(Valor[Indicador == "DPl"], na.rm = TRUE),
+     DRS = sum(Valor[Indicador == "DRS"], na.rm = TRUE),
+     DVd = sum(Valor[Indicador == "DVd"], na.rm = TRUE)) %>%
+  left_join(
+    ipls_atual %>%
+      filter(grepl("2024", Mês_Ano) & Indicador == "CGe") %>%
+      group_by(Mês_Ano) %>%
+      summarise(CGe_soma = sum(as.numeric(gsub("[^0-9.-]", "", Valor)), na.rm = TRUE)),
+    by = "Mês_Ano") %>%
+  mutate(TMR = DPa + DPl + DMt + DVd + CGe_soma) %>%
+  arrange(Mês_Ano)  
+
+Residuos_2024_formatado <- Residuos_2024 %>%
+  mutate(across(where(is.numeric), ~comma(., big.mark = ".", decimal.mark = ",")))
+
+Residuos_2024_formatado <- Residuos_2024 %>%
+  mutate(
+    `Mês_Ano` = factor(Mês_Ano, levels = c("Jan/2024", "Fev/2024", "Mar/2024", "Abr/2024", "Mai/2024", 
+                                           "Jun/2024", "Jul/2024", "Ago/2024", "Set/2024", "Out/2024", 
+                                           "Nov/2024", "Dez/2024"))) %>% arrange(Mês_Ano)  
+
+formattable(Residuos_2024_formatado %>% select(
+  `Mês_Ano`, 
+  `Resíduos de papel` = DPa, 
+  `Resíduos Plásticos` = DPl, 
+  `Resíduos de metais` = DMt,
+  `Resíduos de vidros` = DVd,
+  `Coleta geral` = CGe_soma,
+  `Total de materiais destinados à reciclagem` = TMR))
+
+```
+
+Tabela 15. Destinações de materiais reciclados
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+Residuos_2024_reciclados <- Residuos_2024 %>%
+  mutate(
+    `Mês/Ano` = trimws(Mês_Ano),  # Remove espaços extras
+    `Mês/Ano` = factor(`Mês/Ano`, levels = c("Jan/2024", "Fev/2024", "Mar/2024", "Abr/2024", "Mai/2024", 
+                                              "Jun/2024", "Jul/2024", "Ago/2024", "Set/2024", "Out/2024", 
+                                              "Nov/2024", "Dez/2024"))) %>%
+  left_join(
+    ipls_atual %>%
+      filter(grepl("2024", Mês_Ano) & Indicador == "DEl") %>%
+      group_by(Mês_Ano) %>%
+      summarise(DEl_meses = sum(as.numeric(gsub("[^0-9.-]", "", Valor)), na.rm = TRUE)),  
+    by = "Mês_Ano") %>%
+  arrange(`Mês/Ano`)
+
+Residuos_2024_reciclados_formatado <- Residuos_2024_reciclados %>%
+  mutate(across(where(is.numeric), ~comma(., big.mark = ".", decimal.mark = ","))) %>%
+  arrange(`Mês/Ano`)
+
+formattable(Residuos_2024_reciclados_formatado %>% select(
+  `Mês/Ano`,
+  `Destinação de resíduos de saúde (Litros)` = DRS,
+  `Destinação de resíduos de obras e reformas (KG)` = DOB,
+  `Destinação de resíduos de suprimentos de impressão (KG)` = DImp,
+  `Destinação de resíduos de lâmpadas (Un)` = DLP,
+  `Destinação de resíduos eletroeletrônicos (KG)` = DEl_meses,  
+  `Destinação de resíduos de pilhas e baterias (KG)` = DPB))
+
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+O índice de destinação de material para reciclagem é o indicador utilizado para avaliar o desempenho no tema, ele é calculado com base na soma, em quilogramas, dos resíduos secos recicláveis e inclui a destinação de papel, plástico, vidro, metal e coleta geral (materiais recicláveis sem separação). Como meta a ele relacionada, fixou-se o aumento em, no mínimo, 10% anualmente da quantidade de destinação de materiais para reciclagem pelo PJRO, considerando a destinação do ano anterior.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Em 2023, 44.385,84 kg de material foram direcionados à reciclagem. Em 2024 foram 44.064,06 kg, número 0,73 % menor do que o apresentado no ano anterior. Como a meta era de aumento, e o resultado foi uma redução, esta não foi alcançada.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+PPara contribuir com o alcance desta meta foram previstas 11 ações, elencadas no PS com numeração de 26 a 36 (Tabela 16. Ações no tema gestão de resíduos). Duas destas, com término previsto ainda para 2024 não foram concluídas, mas encontram-se em execução. Dentre as demais, quatro estão em andamento e no prazo, e cinco não foram iniciadas.</div>
+
+Tabela 16. Ações no tema Gestão de Resíduos
+```{r, echo=FALSE}
+tabela7 <- data.frame(
+  Ação = c("(A26)", "(A27)", "(A28)", "(A29)", "(A30)", "(A31)", "(A32)", "(A33)", "(A34)", "(A35)", "(A36)"),
+  Descrição = c(
+    "Instituir Política de Gestão de Resíduos do Poder Judiciário de Rondônia, até 2024.",
+    "Contratar empresa para construção de abrigos de resíduos nas unidades instaladas do Poder Judiciário de Rondônia, até 2025.",
+    "Incluir nos projetos de novos prédios a previsão de abrigos de resíduos, como critério de sustentabilidade.",
+    "Realizar estudo técnico para contratação de organizações de catadores (as) de materiais recicláveis para coletar recicláveis nas unidades do Poder Judiciário de Rondônia, até 2025.",
+    "Definir estratégias para o desfazimento e destinação de resíduos perigosos e bens eletroeletrônicos em desuso, até 2024.",
+    "Articular apoio e fomento para a instalação de Ecopontos no Município de Porto Velho e comarcas.",
+    "Criar ambiente para 'Espaços Sustentáveis' em pelo menos 10 comarcas até 2026.",
+    "Fomentar a separação e destinação do resíduo orgânico em pelo menos 10 comarcas até 2026.",
+    "Implantar estrutura adequada para evitar desperdício, reaproveitar e destinar corretamente sobras das obras de manutenção predial, até 2026.",
+    "Estudar viabilidade para contratação de auditoria para a certificação lixo zero do Instituto Lixo Zero Brasil, credenciado pela organização internacional Zero Waste International Alliance.",
+    "Realizar campanha, anualmente, de conscientização sobre a geração de resíduos, no âmbito institucional e pessoal."
+  ),
+  Início = c("01/04/2024", "02/05/2025", "02/05/2024", "06/07/2024", "11/04/2024", "10/10/2024", "06/06/2025", "07/04/2024", "04/07/2024", "20/10/2024", "01/04/2024"),
+  Fim = c("20/06/2024", "12/12/2025", "31/12/2024", "06/05/2025", "20/06/2024", "30/06/2026", "30/11/2026", "08/06/2025", "07/07/2026", "30/10/2025", "30/08/2026"),
+  Situação = c("Em andamento", "Não iniciada", "Em andamento", "Não iniciada", "Concluída", "Em andamento", "Em andamento", "Em andamento", "Não iniciada", "Não iniciada", "Concluída")
+)
+
+kable(tabela7, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>8. REFORMAS E CONSTRUÇÕES
+</b> 
+  
+<div style="text-align: justify; text-indent: 2em;">
+Reformas e construções costumam ser responsáveis por parte considerável do orçamento de instituições públicas, de modo que, otimizar os recursos destinados a estas áreas pode resultar em significativa redução de gastos.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Para avaliar os dispêndios nesta área foi criado o índice de execução orçamentária com reformas e adequações no leiaute, que mede o valor empenhado anualmente relativo a reformas. A meta criada para esse índice foi a execução de 80% do orçamento destinado anualmente. O orçamento definido para a área este ano foi de R$ 31.340.000,00. Considerando que o total empenhado foi de R$ 7.064.730,79, 22,54% do orçado, a meta relativa a reformas não foi atingida.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+No gráfico abaixo é apresentada a evolução temporal dos gastos com reformas. Percebe-se que a variável não possui tendência de crescimento ou queda, apresentando picos que se distribuem na linha temporal de forma irregular.</div>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+# Definir a ordem correta dos meses sem o ano
+ordem_meses <- c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+                 "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+# Filtrar e preparar os dados
+Reforma_GRef_TJRO <- ipls_atual %>%
+  filter(Indicador == "GRef", Ano == 2024) %>%
+  group_by(Mês_Ano) %>%
+  summarise(
+    count = n(),
+    Total_Valor = sum(Valor, na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  mutate(
+    Mês = factor(str_sub(Mês_Ano, 1, 3), levels = ordem_meses),  # Extrai apenas o mês
+    Total_Valor_formatado = prettyNum(Total_Valor, big.mark = ".", decimal.mark = ",")
+  ) %>%
+  arrange(Mês)
+
+# Criar gráfico
+ggplot(Reforma_GRef_TJRO, aes(x = Mês, y = Total_Valor)) +
+  geom_bar(stat = "identity", fill = "skyblue") +  
+  geom_text(aes(label = Total_Valor_formatado), vjust = -0.3, size = 4) +  
+  labs(title = "Gráfico 11. Evolução dos gastos com Reforma em 2024") +  
+  theme_minimal() +  
+  scale_x_discrete(limits = ordem_meses) +  
+  theme(
+    plot.title = element_text(size = 14, hjust = 0.5),  # Título centralizado
+    axis.title.x = element_blank(),  
+    axis.title.y = element_blank(),  # Remove título do eixo Y
+    axis.text.x = element_text(angle = 45, hjust = 1),  
+    axis.text.y = element_blank(),  
+    axis.ticks.y = element_blank(),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank())
+```
+
+
+<div style="text-align: justify; text-indent: 2em;">
+Há ainda um segundo indicador relacionado a obras, o índice de execução orçamentária com construções, calculado com base na soma total de valores empenhados mês a mês, dentro do período de um ano.  A meta para este índice foi executar 80% do orçamento anual previsto para construções. O orçamento previsto foi de R$ 57.120.000,00. Foram empenhados R$15.163.298,68, 26,55% do previsto. Portanto, por uma diferença de 53,45%, a meta não foi atingida.</div>
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+# Definir a ordem correta dos meses sem o ano
+ordem_meses <- c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+                 "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+# Filtrar e preparar os dados
+Reforma_GConst_TJRO <- ipls_atual %>%
+  filter(Indicador == "GConst", Ano == 2024) %>%
+  group_by(Mês_Ano) %>%
+  summarise(
+    count = n(),
+    Total_Valor = sum(Valor, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    Mês = factor(str_sub(Mês_Ano, 1, 3), levels = ordem_meses),  # Extrai apenas o mês
+    Total_Valor_formatado = prettyNum(Total_Valor, big.mark = ".", decimal.mark = ",")) %>%
+  arrange(Mês)
+
+# Criar gráfico sem contorno
+ggplot(Reforma_GConst_TJRO, aes(x = Mês, y = Total_Valor)) +
+  geom_bar(stat = "identity", fill = "skyblue") +  # Sem 'color = "black"' para remover contorno
+  geom_text(aes(label = Total_Valor_formatado), vjust = -0.3, color = "black", size = 4) +  
+  labs(title = "Gráfico 12. Evolução dos gastos com Construções em 2024") +  
+  theme_minimal() +  
+  scale_x_discrete(limits = ordem_meses) +  
+  theme(
+    plot.title = element_text(size = 14, hjust = 0.5),  # Título centralizado
+    axis.title.x = element_blank(),  
+    axis.title.y = element_blank(),  # Remove título do eixo Y
+    axis.text.x = element_text(angle = 45, hjust = 1),  
+    axis.text.y = element_blank(),  
+    axis.ticks.y = element_blank(),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank())
+```
+
+
+<div style="text-align: justify; text-indent: 2em;">
+Para auxiliar o alcance das metas foram instituídas 4 ações (Tabela 17. Ações no tema reformas e construções). Duas encontram-se em andamento e duas não foram iniciadas.</div>
+
+Tabela 17. Ações no tema Reformas e Construções
+```{r, echo=FALSE}
+tabela14 <- data.frame(
+  Ação = c("(A37)", "(A38)", "(A39)", "(A40)"),
+  Descrição = c(
+    "Implementar metodologia de controle interno que mensure o gasto com serviços utilizados nas reformas e mudanças de leiaute não contemplados em contratos terceirizados.",
+    "Definir parâmetros para realizar reformas ou mudanças de leiaute.",
+    "Elaborar Manual de Construções Sustentáveis com diretrizes para o atendimento dos critérios de acessibilidade e sustentabilidade nas construções do Poder Judiciário de Rondônia, até 2026.",
+    "Realizar estudo dos espaços ociosos ou desocupados do TJRO para identificar alternativas de otimização do uso."
+  ),
+  Início = c("04/04/2024", "04/04/2024", "30/05/2025", "10/02/2025"),
+  Fim = c("31/12/2026", "31/12/2026", "30/11/2026", "30/11/2025"),
+  Situação = c("Em andamento", "Em andamento", "Não iniciada", "Não iniciada"))
+
+kable(tabela14, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>9. LIMPEZA
+</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Com a inserção deste tema no PS, objetivou-se verificar os gastos relacionados aos serviços de limpeza para eventuais ajustes em sua gestão. Dois indicadores foram instituídos para avaliar o desempenho neste tema: o índice de racionalização de gastos com serviços de limpeza e o índice de gasto com materiais de limpeza.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O índice de racionalização e gastos com serviços de limpeza é obtido por meio da divisão entre a despesa total realizada com o contrato de limpeza e a área contratada. Ele corresponde ao custo médio por m² dos serviços de manutenção da limpeza deste Poder durante o período-base. Como meta para este indicador estabeleceu-se gerir o gasto com contratos de limpeza por m² para que não ultrapasse 15% em relação ao ano anterior.</div>
+
+
+<div style="text-align: justify; text-indent: 2em;">
+Em 2023 o gasto com contratos de limpeza foi de 43,19 R$/m², o gasto total foi de R$ 8.287.308. Os gastos com contratos de limpeza em 2024 foram de R$ 8.434.736,87, que divididos pela área total contratada (170.454,86 m²), resultam em 49,48 R$/m², significando 6,29 % maior que no exercício anterior, dentro da meta, portanto.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O índice de gastos com materiais de limpeza representa a despesa total realizada com a aquisição de materiais de limpeza durante um determinado período. Considera-se material de limpeza todos os insumos adquiridos com finalidade de limpeza e conservação.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Como meta para este indicador definiu-se a redução anual do gasto com materiais de limpeza em 3%. Em 2023 o gasto com materiais de limpeza foi de R$ 48.026,66. No exercício seguinte estes gastos totalizaram R$ 51.243,76, um aumento de 7%, deste modo, considera-se a meta atingida.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O índice de gastos com materiais de limpeza representa a despesa total realizada com a aquisição de materiais de limpeza durante um determinado período. Considera-se material de limpeza todos os insumos adquiridos com finalidade de limpeza e conservação. </div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Como meta para este indicador definiu-se a redução anual do gasto com materiais de limpeza em 3%. Em 2023 o gasto com materiais de limpeza foi de R$ 59.449,66. No exercício seguinte estes gastos totalizaram R$ 51.243,76, uma redução de 13,8%, deste modo, considera-se a meta atingida.</div>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+# Transformação dos dados
+Limpeza <- ipls_atual %>%
+  filter(Indicador %in% c("GLB", "m² Cont", "GRL", "GML"), Ano == 2024, Mês %in% meses_selecionados) %>% 
+  group_by(Indicador, Mês) %>%
+  summarise(Total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  mutate(Indicador = recode(Indicador, 
+                            "GLB" = "Gastos com contratos limpeza no período-base", 
+                            "GRL" = "Gasto relativo com contratos limpeza",
+                            "GML" = "Gasto com material de limpeza",
+                            "m² Cont" = "Área Contratada"))
+
+# Definição da ordem correta dos meses
+ordem_meses <- c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+# Filtrando apenas o indicador desejado para o gráfico e ordenando os meses
+Limpeza_contrato <- Limpeza %>%
+  filter(Indicador == "Gastos com contratos limpeza no período-base") %>%
+  mutate(Mês = factor(Mês, levels = ordem_meses)) %>% 
+  arrange(Mês)
+
+# Gráfico
+ggplot(Limpeza_contrato, aes(x = Mês, y = Total / 1000)) +  # Convertendo para milhares
+  geom_col(fill = "steelblue") +  # Mantendo o estilo das barras
+  theme_minimal() +
+  labs(title = "Gráfico 13. Evolução dos Gastos com Contratos de Limpeza em 2024 (em milhares)",
+       x = "Mês",
+       y = NULL) +  # Removendo título do eixo Y
+  theme(panel.grid = element_blank(),
+        plot.title = element_text(size = 14, hjust = 0.5),  # Centralizando título
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_blank(),  # Removendo números do eixo Y
+        axis.ticks.y = element_blank(),  # Removendo marcações do eixo Y
+        axis.line.y = element_blank()) +  # Removendo linha do eixo Y
+  geom_text(aes(label = paste0("R$ ", formatC(Total / 1000, format = "f", big.mark = ".", decimal.mark = ",", digits = 1))), 
+            vjust = -0.3, size = 4)  # Adicionando rótulos com formatação monetária
+```
+
+Tabela 18. Área contratada e indicador de gasto por m²
+
+<div style="text-align: justify; text-indent: 2em;">
+No que se refere ao plano, conforme pode-se observar na Tabela 1. Ações no tema Limpeza, seis ações foram planejadas. Destas, quatro deveriam ter sido iniciadas e uma finalizada ainda em 2024, as demais apenas em 2025. Nenhuma foi iniciada.</div>
+
+Tabela 19. Ações no tema limpeza
+
+```{r, echo=FALSE}
+# Criando a nova tabela de ações sobre limpeza
+tabela16 <- data.frame(
+   Ação = c("(A41)", "(A42)", "(A43)", "(A44)", "(A45)", "(A46)"),
+  Descrição = c(
+     "Realizar estudo para identificar a viabilidade de substituição do papel toalha nos banheiros por secador de mãos elétrico, até 2025.",
+    "Elaborar relatório que identifique a real necessidade de consumo e aquisição de materiais de limpeza, até 2024.",
+    "Realizar a compra de materiais de limpeza, adquiridos pelo PJRO, que atendam os critérios de sustentabilidade do Guia de Compras Sustentáveis da Advocacia Geral da União (AGU).",
+    "Incluir nas novas contratações de prestação de serviços de limpeza que os produtos de limpeza atendam aos critérios de sustentabilidade do Guia de Compras Sustentáveis da Advocacia Geral da União (AGU).",
+    "Instituir programa de integração e aperfeiçoamento para os (as) colaboradores(as) da empresa terceirizada dos serviços de limpeza, até 2025.",
+    "Criar instrumento para compartilhar com o corpo funcional orientações e dicas voltadas à conservação dos serviços de limpeza nas unidades do Poder Judiciário, até 2025."
+  ),
+  Início = c("01/04/2024", "01/04/2024", "02/04/2024", "02/06/2024", "07/06/2024", "07/06/2024"),
+  Fim = c("05/03/2025", "01/12/2024", "30/11/2026", "30/11/2026", "06/05/2025", "06/05/2025"),
+  Situação = c("Não iniciada", "Pendente", "Em andamento", "Em andamento", "Não iniciada", "Não iniciada")
+)
+
+kable(tabela16, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+```
+
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>10. SEGURANÇA INSTITUCIONAL
+</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Com a inserção do tema segurança institucional no plano relacionado a este relatório buscou-se criar mecanismos de avaliação dos gastos relacionados aos serviços de vigilância, com vista a verificar a real necessidade de uso do serviço, áreas contratadas e número de postos. Assim, as chances de tomar decisões mais assertivas em momentos como a repactuação do contrato seriam aumentadas.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O indicador definido para a mencionada avaliação foi o índice de racionalização de gastos com serviços de vigilância, o qual é obtido a partir da soma de todos os valores gastos com vigilância eletrônica no decorrer do ano de referência. A opção por aferir apenas gastos relacionados à vigilância eletrônica deve-se ao fato de o tribunal já não possuir gastos com outros tipos de vigilância desde o ano de 2021. </div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Como meta para este indicador, estabeleceu-se: gerir o gasto financeiro com contrato de vigilância eletrônica para que não ultrapasse 12% em relação ao estimado no orçamento do exercício. O gasto com vigilância eletrônica total ao fim de 2024 foi de R$ 5.201.258,42. Uma vez que o valor da meta constante no PS era de R$ 6.037.995,00, a diferença em percentual entre os valores foi de 13,86%. A meta, portanto, foi atingida.</div>
+
+Tabela 20. Gastos com contratos e força de trabalho da vigilância
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+# Transformação dos dados
+#vigilancia <- ipls_atual %>%
+#  filter(Indicador == "GVe", Ano == 2024, Mês %in% meses_selecionados) %>% 
+#  group_by(Mês) %>%
+#  summarise(Total = sum(Valor, na.rm = TRUE)) %>%
+#  mutate(Mês = factor(Mês, levels = c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+#                                      "Jul", "Ago", "Set", "Out", "Nov", "Dez"))) %>% 
+#  arrange(Mês)
+
+# Plotagem do gráfico ordenado
+#ggplot(vigilancia, aes(x = Mês, y = Total / 1000)) +  # Convertendo para milhares
+#  geom_col(fill = "coral2") +  # Mantendo o estilo das barras
+#  theme_minimal() +
+#  labs(title = "Evolução dos Gastos com Vigilância Eletrônica (2024) - Valores em Milhares",
+#       x = "Mês",
+#       y = NULL) +  # Removendo título do eixo Y
+#  theme(panel.grid = element_blank(),
+#        plot.title = element_text(size = 10, face = "bold", hjust = 0.5),  # Centralizando título
+#        axis.text.x = element_text(angle = 45, hjust = 1),
+#        axis.text.y = element_blank(),  # Removendo números do eixo Y
+#        axis.ticks.y = element_blank(),  # Removendo marcações do eixo Y
+#        axis.line.y = element_blank()) +  # Removendo linha do eixo Y
+#  geom_text(aes(label = paste0("R$ ", formatC(Total / 1000, format = "f", big.mark = ".", decimal.mark = ",", digits = 1))), 
+#            vjust = -0.3, size = 4)  # Adicionando rótulos com formatação monetária
+```
+
+
+```{r, echo=FALSE}
+#Tabela 17. Gastos com contratos e força de trabalho da vigilância 
+Vigilancia_2024 <- ipls_atual %>% 
+  filter(Ano == 2024) %>%  
+  separate(Mês_Ano, c("Mes", "Ano")) %>% 
+  mutate(Mes = factor(Mes, levels = c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+                                      "Jul", "Ago", "Set", "Out", "Nov", "Dez"))) %>% 
+  group_by(Mes, Indicador) %>% 
+  summarise(total = sum(Valor, na.rm = TRUE), .groups = "drop") %>% 
+  spread(Indicador, total) %>% 
+  select(Mes, GV, GVe, QPV, GMV) %>% 
+  rename(
+    `Gasto com contrato de vigilância eletrônica` = GVe,
+    `Gasto médio com contrato de vigilância armada e desarmada` = GMV,
+    `Quantidade total de pessoas contratadas para o serviço de vigilância armada e desarmada` = QPV,
+    `Gastos com contratos de vigilância armada e desarmada` = GV) %>% 
+  mutate(
+    `Gasto com contrato de vigilância eletrônica` = formattable::currency(`Gasto com contrato de vigilância eletrônica`, "R$", big.mark = ".", decimal.mark = ","),
+    `Gasto médio com contrato de vigilância armada e desarmada` = formattable::currency(`Gasto médio com contrato de vigilância armada e desarmada`, "R$", big.mark = ".", decimal.mark = ","),
+    `Gastos com contratos de vigilância armada e desarmada` = formattable::currency(`Gastos com contratos de vigilância armada e desarmada`, "R$", big.mark = ".", decimal.mark = ","))
+
+formattable(Vigilancia_2024)
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+No que se refere às ações, das dez previstas, uma foi declinada a A48 Realizar estudo para identificar alternativas que viabilizem maior quantidade da mão de obra para os serviços de monitoramento, até 2024. Sete estão em andamento e uma foi concluída.</div>
+
+Tabela 21. Ações no tema segurança institucional
+```{r, echo=FALSE}
+tabela18 <- data.frame(
+   Ação = c("(A47)", "(A48)", "(A49)", "(A50)", "(A51)", "(A52)", "(A53)", "(A54)", "(A55)", "(A56)"),
+  Descrição = c(
+    "Realizar estudo para identificar viabilidade de substituição do controle de acesso biométrico por reconhecimento facial, até 2025.",
+    "Realizar estudo para identificar alternativas que viabilizem maior quantidade da mão de obra para os serviços de monitoramento, até 2024.",
+    "Revisar o Plano de Segurança Institucional e os Procedimentos Operacionais Padrão com base na Resolução n. 435-2021/CNJ, até 2025.",
+    "Criar canal para receber originariamente pedidos e reclamações dos(as) magistrados(as), servidores(as) e usuários(as) do sistema de Justiça em relação à segurança institucional, até 2025.",
+    "Elaborar cartilha orientativa com protocolos de segurança adotados pelo Poder Judiciário de Rondônia, até 2025.",
+    "Realizar campanhas anualmente para sensibilização e conscientização de magistrados(as), servidores(as) e demais colaboradores(as) do Poder Judiciário a respeito da Segurança Institucional.",
+    "Realizar pesquisa bienal de satisfação e percepção dos usuários a respeito dos serviços de segurança institucional.",
+    "Realizar inspeção técnica em todas as Comarcas do Poder Judiciário.",
+    "Realizar formação e requalificação de brigadistas.",
+    "Realizar capacitação e treinamentos com o efetivo da Assessoria Militar, visando o aperfeiçoamento na prestação do serviço."
+  ),
+  Início = c("01/06/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", 
+             "01/03/2025", "01/04/2024", "01/04/2024", "01/04/2024"),
+  Fim = c("31/12/2026", "31/12/2024", "31/12/2025", "31/12/2024", "31/12/2024", "31/12/2025", 
+          "25/05/2026", "31/12/2024", "31/12/2025", "31/12/2025"),
+  Situação = c("Em andamento", "Declinado", "Em andamento", "Em andamento", "Em andamento", "Em andamento", 
+               "Em andamento", "Concluída", "Em andamento", "Concluída"))
+
+kable(tabela18, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>11. TELEFONIA
+</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Em telefonia, a instituição desejou verificar os consumos e gastos dos serviços relacionados. Uma vez que a utilização de outros mecanismos de comunicação como VoIP, e-mails e aplicativos gratuitos de comunicação pode oferecer as mesmas funcionalidades por custos menores.
+</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O indicador definido para telefonia foi a “Racionalização de gastos per capta com telefonia”, o qual é obtido por meio da soma dos gastos anuais com telefonia fixa e móvel com posterior divisão do total pela força de trabalho total da instituição.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Como meta fixou-se a redução anual do gasto com telefonia per capta em 2%. Ao fim de 2024 aferiu-se como resultado para o indicador o valor de R$91,68 por pessoa, menor que o aferido em 2023. Deste modo, é possível afirmar que a meta estabelecida para telefonia foi atingida no ano de 2024.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Para fins de construção de base de dados, a instituição realiza ainda a observação de outras variáveis relativas ao tema, as quais são definidas pelo anexo único da Resolução CNJ n. 400/2021. As mencionadas variáveis são o número de linhas telefônicas fixas existentes ao fim do período base, o qual apresentou um total de 20 linhas; e o número de linhas telefônicas móveis aferido no mesmo momento, que resultou em um total de 352 linhas.</div>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+# TELEFONIA - Gráficos unificados para gastos relativos
+#telefonia_relativo <- ipls_atual %>%
+#  filter(Indicador %in% c("GRTF", "GRTM"), Ano == 2024, Mês %in% meses_selecionados) %>% 
+#  group_by(Indicador, Mês) %>%
+#  summarise(Total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+#  mutate(Indicador = recode(Indicador, 
+#                            "GRTF" = "Fixa",
+#                            "GRTM" = "Móvel"),
+#         Mês = factor(Mês, levels = c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+#                                      "Jul", "Ago", "Set", "Out", "Nov", "Dez"))) %>%
+#  arrange(Mês)
+
+# Gráfico unificado de gastos relativos
+#ggplot(telefonia_relativo, aes(x = Mês, y = Total, fill = Indicador)) +
+#  geom_col(position = "dodge", width = 0.7) +  
+#  theme_minimal() +
+#  labs(title = "Gasto Relativo com Telefonia - Valores Totais (R$)", x = "Mês", y = NULL) +
+#  theme(panel.grid = element_blank(),
+#        plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+#        axis.text.x = element_text(angle = 45, hjust = 1),
+#        axis.text.y = element_blank(),  
+#        axis.ticks.y = element_blank(),  
+#        axis.line.y = element_blank()) +  
+#  scale_fill_manual(values = c("Fixa" = "green3", "Móvel" = "blue3")) +  
+#  geom_text(aes(label = paste0("R$ ", formatC(Total, format = "f", big.mark = ".", decimal.mark = ",", digits #= 0))), 
+#            vjust = -0.3, size = 3)
+```
+
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE} 
+# TELEFONIA - Gráficos separados para gastos totais
+#telefonia_total <- ipls_atual %>%
+#  filter(Indicador %in% c("GTF", "GTM"), Ano == 2024, Mês %in% meses_selecionados) %>% 
+#  group_by(Indicador, Mês) %>%
+#  summarise(Total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+#  mutate(Indicador = recode(Indicador, 
+#                            "GTF" = "Gasto Total - Fixa",
+#                            "GTM" = "Gasto Total - Móvel"),
+#         Mês = factor(Mês, levels = c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+#                                      "Jul", "Ago", "Set", "Out", "Nov", "Dez"))) %>%
+#  arrange(Mês)
+
+# Gráfico separado - Total Fixa
+#ggplot(subset(telefonia_total, Indicador == "Gasto Total - Fixa"),
+#       aes(x = Mês, y = Total)) +
+#  geom_col(fill = "red3", width = 0.7) +
+#  theme_minimal() +
+#  labs(title = "Gasto Total com Telefonia Fixa - Valores Totais (R$)", x = "Mês", y = NULL) +
+#  theme(panel.grid = element_blank(),
+#        plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+#        axis.text.x = element_text(angle = 45, hjust = 1),
+#        axis.text.y = element_blank(),
+#        axis.ticks.y = element_blank(),
+#        axis.line.y = element_blank()) +
+#  geom_text(aes(label = paste0("R$ ", formatC(Total, format = "f", big.mark = ".", decimal.mark = ",", digits #= 0))), 
+#            vjust = -0.3, size = 3)
+
+# Gráfico separado - Total Móvel
+#ggplot(subset(telefonia_total, Indicador == "Gasto Total - Móvel"),
+#       aes(x = Mês, y = Total)) +
+#  geom_col(fill = "purple3", width = 0.7) +
+#  theme_minimal() +
+#  labs(title = "Gasto Total com Telefonia Móvel - Valores Totais (R$)", x = "Mês", y = NULL) +
+#  theme(panel.grid = element_blank(),
+#        plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+#        axis.text.x = element_text(angle = 45, hjust = 1),
+#        axis.text.y = element_blank(),
+#        axis.ticks.y = element_blank(),
+#        axis.line.y = element_blank()) +
+#  geom_text(aes(label = paste0("R$ ", formatC(Total, format = "f", big.mark = ".", decimal.mark = ",", digits #= 0))), 
+#            vjust = -0.3, size = 3)
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Constam no PS 2024/2026 três ações relacionadas à telefonia. Destas, uma foi realizada, a ação (A58), pois fez parte do Seminário de Aperfeiçoamento da Administração dos Fóruns a programação Boas Práticas de telefonia: otimizando os recursos através da tecnologia, com o objetivo de difundir as funcionalidades existentes no TJ, contribuindo positivamente para o desempenho das atividades laborais do cotidiano e ainda ocasionando economia nos gastos com telefonia.</div>
+
+Tabela 23. Ações no tema Telefonia
+```{r, echo=FALSE}
+tabela20 <- data.frame(
+   Ação = c("(A57)", "(A58)", "(A59)"),
+  Descrição = c(
+    "Divulgar tutorial de telefonia do Sistema de Comunicação Unificada, até 2024.",
+    "Realizar ações de conscientização acerca do uso dos serviços de comunicação unificada, Longa Distância Nacional, Longa Distância Internacional, e de telefonia móvel pessoal, e possibilidades tecnológicas das quais o TJRO dispõe a respeito de telecomunicações.",
+    "Realizar diagnóstico para identificar alternativas de otimização do uso de aparelho móvel."),
+  Início = c("13/06/2024", "13/06/2024", "13/06/2024"),
+  Fim = c("31/12/2024", "31/12/2024", "30/12/2025"),
+  Situação = c("Pendente", "Concluída", "Não iniciada"))
+
+kable(tabela20, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>12. VEÍCULOS
+</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+O tema veículos integra o PS 2024-2026 por objetivar-se uma maior eficiência na gestão da mobilidade na instituição e dos gastos com a frota oficial para otimizar as aquisições de veículos. Busca-se a racionalidade dos serviços, no sentido de:</div>
+
+- Avaliar o custo-benefício de ter uma frota própria ou terceirizar o serviço;
+- Avaliar a diminuição de quantidade total de veículos;
+- Aumentar a quantidade de usuários por veículos por meio do compartilhamento de uso;
+- Diminuir o gasto relativo com manutenções.
+
+<div style="text-align: justify; text-indent: 2em;">
+Assim, foi designado como indicador o índice do número de usuários por veículos, o qual traduz-se na divisão entre a força total de trabalho da instituição pela quantidade total de veículos, próprios ou locados. A meta definida para este indicador é um aumento anual de 3,5% no índice.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Em dezembro de 2024 aferiu-se como quantitativo total de veículos 64, sendo 42 veículos de serviço e 22 veículos para transporte de magistrados. Em 2023 estes números foram de 36 e 22 respectivamente, totalizando 58 veículos.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Considerando que o quantitativo total da força de trabalho aferido em 31 de dezembro de 2024 foi de 4.593 colaboradores(a), o índice do número de usuários por veículos foi de 71,76 pessoas por veículo. Sendo possível afirmar, deste modo, que a meta estabelecida para o referido índice não foi alcançada.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O gasto com outros tipos de transportes, sendo passagens aéreas, totalizou em 2024 R$2.744.550,74. Outras variáveis também acompanhadas têm o seu desempenho apresentado a seguir:</div>
+
+- Quantidade de veículos a gasolina, etanol e flex: 1 veículo; 
+- Quantidade de veículos a diesel: 41 veículos; 
+- Quantidade de veículos movidos por fontes alternativas: 2 (elétricos); 
+- Gasto com manutenção de veículos: R$ 374.104,81; 
+- Gasto relativo com manutenção por veículo: R$ 5.845,38.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE} 
+#Gráfico 12. Evolução das quantidades, quilometragem e gastos com veículos
+#veiculos_tjro_mensal <- ipls_atual %>%
+#  select(Mês_Ano, Indicador, Valor) %>%
+#  separate(Mês_Ano, c("Mes", "Ano")) %>%
+#  filter(Indicador %in% c("km", "GMV", "GCM", "GCV"), Ano == 2024) %>%
+#  mutate(Data = lubridate::ymd(paste(Ano, Mes, "01"))) %>%  # Cria coluna de data
+#  group_by(Data, Indicador) %>%
+#  summarise(Total = sum(Valor, na.rm = TRUE)) %>%
+#  spread(Indicador, Total) %>%
+#  mutate(Mes = lubridate::month(Data, label = TRUE, abbr = FALSE),  # Nome do mês
+#         Ano = lubridate::year(Data)) %>%
+#  select(Mes, Ano, Km = km, GMV, GCM, GCV) %>%
+#  arrange(Data) %>%   select(Mes, Km, GMV, GCM, GCV)
+
+# Gráfico de Quilometragem
+#veiculos_tjro_mensal %>%
+#  ungroup() %>%  # Remove agrupamento para evitar conflitos
+#  mutate(Mes = factor(lubridate::month(Data, label = TRUE, abbr = TRUE), 
+#                      labels = c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+#                                 "Jul", "Ago", "Set", "Out", "Nov", "Dez"))) %>%
+#  ggplot(aes(x = Mes, y = Km)) +
+#  geom_col(fill = "green3", width = 0.7) +  # Remove legenda desnecessária
+#  labs(x = NULL, title = "Quilometragem") +  # Remove título do eixo Y
+#  theme_minimal() +
+#  scale_y_continuous(labels = scales::comma_format(big.mark = ".", decimal.mark = ",")) +
+#  theme(panel.grid.major.y = element_blank(),
+#        panel.grid.minor.y = element_blank(),
+#        panel.grid.major.x = element_blank(),  # Remove grade do eixo X
+#        panel.grid.minor.x = element_blank(),
+#        axis.text.y = element_blank(),  # Remove eixo Y
+#        axis.ticks.y = element_blank(),
+#        axis.title.y = element_blank(),  # Remove título do eixo Y
+#        plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+#        axis.text.x = element_text(angle = 30, hjust = 1)) +  # Melhor ângulo para leitura
+#  geom_text(aes(label = scales::comma(Km, big.mark = ".", decimal.mark = ",")), 
+#            vjust = -0.5, size = 4, color = "black")  # Melhor espaçamento dos rótulos
+
+# Criando uma nova coluna de Gasto Total
+#veiculos_tjro_mensal <- veiculos_tjro_mensal %>%
+#  ungroup() %>%
+#  mutate(Gasto_Total = GMV + GCM + GCV,  # Soma dos três gastos
+#         Mes = factor(lubridate::month(Data, label = TRUE, abbr = TRUE), 
+#                      labels = c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+#                                 "Jul", "Ago", "Set", "Out", "Nov", "Dez")))
+#
+# Criando o gráfico de Gasto Total
+#ggplot(veiculos_tjro_mensal, aes(x = Mes, y = Gasto_Total)) +
+#  geom_col(fill = "darkblue", width = 0.7) +  # Define a cor única para o gasto total
+#  labs(x = NULL, y = NULL, title = "Gasto Total com Veículos") +  # Remove título do eixo Y
+#  theme_minimal() +
+#  scale_y_continuous(labels = scales::comma_format(big.mark = ".", decimal.mark = ",")) +
+#  theme(panel.grid = element_blank(),  # Remove grade
+#        plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+#        axis.text.x = element_text(angle = 30, hjust = 1),
+#        axis.text.y = element_blank(),  # Remove os valores do eixo Y
+#        axis.ticks.y = element_blank()) +  # Remove as marcações do eixo Y
+#  geom_text(aes(label = scales::comma(Gasto_Total, big.mark = ".", decimal.mark = ",")), 
+#            vjust = -0.5, size = 4, color = "black")  # Exibir valores no topo das barras
+```
+
+Tabela 24. Indicadores dos Veículos
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+# Processamento dos dados
+veiculos_indices <- ipls_atual %>%
+  select(Mês_Ano, Indicador, Valor) %>%
+  separate(Mês_Ano, c("Mes", "Ano"), convert = TRUE) %>%
+  filter(Indicador %in% c("VGEF", "VD", "VAlt", "QVs", "Serv", "TFaux", "QVM", "MagP"), Ano == 2024) %>%
+  mutate(Data = ymd(paste(Ano, Mes, "01"))) %>%
+  group_by(Data, Indicador) %>%
+  summarise(Total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = Indicador, values_from = Total, values_fill = 0) %>%  # Substitui spread()
+  mutate(
+    `Quantidade de Veículos` = VGEF + VD + VAlt,  
+    `Veículos de Serviço` = QVs,  
+    `Usuários por Veículo de Serviço` = ifelse(QVs > 0, (Serv + TFaux) / QVs, 0),  
+    `Veículos para Magistrados` = QVM,  
+    `Usuários por Veículo de Magistrados` = ifelse(QVM > 0, MagP / QVM, 0),  
+    Mês = month(Data, label = TRUE, abbr = FALSE)
+  ) %>%
+  select(Mês, `Quantidade de Veículos`, `Veículos de Serviço`, `Usuários por Veículo de Serviço`, `Veículos para Magistrados`, `Usuários por Veículo de Magistrados`) 
+
+
+# Criando a tabela formatada sem cores
+formattable(veiculos_indices, list(
+  Mês = formatter("span", style = ~ style(font.weight = "bold"))
+))
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Em relação às ações, as numeradas de 60 a 63 destinaram-se a veículos. Das três, apenas uma possuía prazo de início ainda em 2024, entretanto, esta não foi iniciada.</div>
+
+Tabela 25. Ações no tema Veículos
+```{r, echo=FALSE, message=FALSE, warning=FALSE} 
+tabela22 <- data.frame(
+   Ação = c("(A60)", "(A61)", "(A62)"),
+  Descrição = c(
+    "Elaborar Plano de Manutenção Preventiva para todos os veículos.",
+    "Elaborar cartilha sobre o uso de veículos oficiais considerando os serviços e a sustentabilidade.",
+    "Realizar testes com carros elétricos adquiridos para analisar a viabilidade da compra de novos carros."
+  ),
+  Início = c("10/07/2024", "04/03/2025", "01/04/2024"),
+  Fim = c("20/05/2025", "06/03/2025", "06/03/2025"),
+  Situação = c("Não iniciada", "Não iniciada", "Não iniciada"))
+
+kable(tabela22, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>13. COMBUSTÍVEL
+</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Ao atentar a temática combustível e inseri-la no plano objetivou-se assegurar o acompanhamento  do consumo dos diversos tipos de combustíveis utilizados na frota de veículos oficiais. Tal monitoramento pode indicar:</div>
+
+- A necessidade de otimizar o consumo, os gastos e avaliar a possibilidade do uso de combustível alternativo e transporte coletivo; 
+- A necessidade de diminuir o consumo geral de combustíveis; 
+- O aumento da quantidade de litros de combustível por veículo como consequência da diminuição da quantidade de veículos.
+
+<div style="text-align: justify; text-indent: 2em;">
+O índice do consumo de combustível de veículos é o indicador relativo a combustíveis. Ele é calculado a partir da relação entre a quilometragem e o consumo em litros de combustível de toda a frota de veículos. Como meta, firmou-se um consumo médio anual de 8 km/l pelos carros da frota. A quilometragem total dos veículos da frota no período analisado foi de 707.108 quilômetros e o consumo total de combustível foi 120.473 litros. Portanto o índice do consumo de combustível de veículos foi 5,87. A meta, então, não foi alcançada.</div>
+
+Tabela 26. Consumos de Combustíveis em litros 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+
+combustivel1 <- ipls_atual %>% 
+  filter(Ano == 2024) %>%  # Filtra apenas o ano de 2024
+  separate(Mês_Ano, c("Mes", "Ano")) %>% 
+  mutate(Mes = factor(Mes, levels = c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+                                      "Jul", "Ago", "Set", "Out", "Nov", "Dez"))) %>%  # Ordena os meses
+  filter(Descrição_Indicador != "Gasto com copos descartáveis") %>%  # Exclui o filtro indesejado
+  group_by(Mes, Indicador) %>%  # Agrupa por Mês e Indicador
+  summarise(total = sum(Valor, na.rm = TRUE), .groups = "drop") %>% 
+  spread(Indicador, total)   # Transforma os indicadores em colunas
+  
+
+# Passo 2: Formata e exibe a tabela
+combustivel1 %>%
+  select(
+    Mês = Mes,
+    Gasolina = CG, 
+    Etanol = CE,
+    Diesel = CD,
+    `Gasolina e Etanol por veículo` = CRAG,
+    `Diesel por Veículo` = CRD,
+    `Gasto com combustível` = GC
+  ) %>%
+  mutate(across(
+    where(is.numeric) & !starts_with("Mês")
+    
+  )) %>%
+  mutate(
+    `Gasto com combustível` = formattable::currency(`Gasto com combustível`, "R$", big.mark = ".", decimal.mark = ",")
+  ) %>%
+  formattable()
+
+
+
+
+
+```
+
+
+<div style="text-align: justify; text-indent: 2em;">
+Apenas uma ação foi estabelecida com relação a combustíveis, com início previsto para o ano de 2025.</div>
+
+
+Tabela 27. Ações no tema Combustível 
+```{r, echo=FALSE}
+tabela24 <- data.frame(
+   Ação = c("(A63)"),
+  Descrição = c(
+    "Viabilizar a criação de painel para otimização de deslocamento de veículos."
+  ),
+  Início = "01/03/2025",
+  Fim = "30/11/2025",
+  Situação = "Não iniciada")
+
+kable(tabela24, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>14. SERVIÇOS GRÁFICOS
+</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Neste tema são analisadas as despesas com contratos de serviços gráficos, tais como impressão de adesivos, banners, cartões de visita e afins, sendo contabilizado também os dispêndios relativos à mão de obra. O indicador relacionado é o índice de racionalização de gastos com serviços gráficos, o qual é calculado com base na soma das despesas realizadas com serviços gráficos pelo PJRO.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O citado indicador possui como meta a redução anual de 1% dos gastos com serviços gráficos do PJRO. Em 2024 foram gastos R$ 610.113,22, um valor 91,58% maior que o aferido ao fim de 2023, R$ 318.023,41. Assim, observa-se que a meta fixada para o ano em análise não foi alcançada. Tal resultado deve-se a um aumento de demanda nos meses de setembro e outubro, decorrente da realização de eventos diversos tanto pelo TJRO como pela Escola da Magistratura.</div>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE} 
+gc_graff <- ipls_atual %>%  
+  filter(Ano == 2024, Indicador == "GCGraf", Apuração == "Mensal", Prédio == "Edifício Sede") %>% 
+  select(Mês = Mês_Ano, Gastos = Valor) %>%  # Renomeando a coluna para facilitar
+  mutate(Mês = factor(Mês, levels = unique(Mês)))  # Mantendo a ordem correta dos meses
+
+ggplot(gc_graff, aes(x = Mês, y = Gastos)) +
+  geom_col(width = 0.7, fill = "#0073C2") +  # Azul padrão
+  geom_text(aes(label = paste0("R$ ", formatC(Gastos, format = "f", big.mark = ".", decimal.mark = ",", digits = 0))), 
+            vjust = -0.3, size = 4) +
+  labs(title = "Gráfico 14. Evolução dos Gastos com Serviços Gráficos",
+       x = NULL,  # Remove o título do eixo X
+       y = NULL) +  # Remove o título do eixo Y
+  theme_minimal() +
+  theme(panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_blank(),  
+        axis.ticks.y = element_blank(),  
+        axis.line.y = element_blank(),
+        plot.title = element_text(size = 14, hjust = 0.5))
+```
+
+
+<div style="text-align: justify; text-indent: 2em;">
+Foram duas as atividades criadas para apoiar a melhoria dos resultados alcançados. Ambas com início ainda em 2024, sendo que uma encontra-se em execução e a outra em andamento.
+</div>
+
+Tabela 29. Ações no tema serviços gráficos 
+```{r, echo=FALSE}
+tabela26 <- data.frame(
+   Ação = c("(A64)", "(A65)"),
+  Descrição = c(
+    "Definir critérios e fluxos para solicitação dos serviços gráficos, até 2025",
+    "Elaborar cartilha com orientações sobre os serviços gráficos, até 2026"),
+  Início = c("01/07/2024", "01/07/2024"),
+  Fim = c("30/06/2025", "30/06/2025"),
+  Situação = c("Em andamento", "Não iniciada"))
+
+kable(tabela26, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>15. AQUISIÇÕES E CONTRATAÇÕES
+</b> 
+    
+<div style="text-align: justify; text-indent: 2em;">
+O tema visa constituir mecanismos de controle que favoreçam a adoção de critérios de sustentabilidade nas compras e contratações realizadas pela instituição. Para aferir o desempenho institucional nesta área criou-se o índice de aquisições e contratações sustentáveis, o qual é obtido por meio de uma relação entre o número de aquisições e contratações sustentáveis e o total de contratações e aquisições realizadas. A meta nesta área é realizar, no mínimo, 50% das contratações anuais observando os critérios de sustentabilidade.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Foram realizadas 220 aquisições e contratações sendo que, destas, 195 adotaram critérios de sustentabilidade em sua realização, sendo este número 88,64% do total. Assim é possível afirmar que a meta foi atingida.</div>
+      
+Tabela 30. Aquisições e Contratações
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}  
+ACRACS  <- ipls_atual %>% 
+  filter(Ano == 2024, str_detect(Mês_Ano, "Dez")) %>% 
+  separate(Mês_Ano, c("Mes", "Ano")) %>%
+  group_by(Ano, Indicador) %>% 
+  summarise(total = sum(Valor, na.rm = TRUE)) %>%
+  spread(Indicador, total) %>%
+  mutate(Ano = as.numeric(Ano)) %>%
+  rename(
+    `Aquisições e Contratações Sustentáveis` = ACS,
+    `Aquisições e Contratações` = ACR) %>%
+  mutate(Percentual = formattable::percent(`Aquisições e Contratações Sustentáveis` / `Aquisições e Contratações`)) %>%
+  select(Ano, Percentual, `Aquisições e Contratações`, `Aquisições e Contratações Sustentáveis`)
+
+#formattable(ACRACS, list(
+#  Ano = formatter("span", style = ~ style(color = "black", font.weight = "bold")),
+#  Percentual = color_bar("skyblue"),
+#  `Aquisições e Contratações` = color_bar("salmon"),
+#  `Aquisições e Contratações Sustentáveis` = color_bar("lightgreen")))
+
+
+ACRACS <- ipls_atual %>% 
+  filter(str_detect(Mês_Ano, "Dez")) %>%  # Filtra apenas dezembro
+  separate(Mês_Ano, c("Mes", "Ano"), convert = TRUE) %>%  # Divide e converte Ano para numérico
+  mutate(Ano = as.numeric(Ano)) %>%  # Garante que Ano seja numérico
+  filter(Ano == 2024) %>%  # Mantém apenas o ano 2024
+  group_by(Ano, Indicador) %>% 
+  summarise(total = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  spread(Indicador, total) %>%
+  mutate(PCS = formattable::percent((ACS / ACR))) %>%  # Calcula PCS
+  select(Ano, 
+         `Total de Aquisições e Contratações` = ACR, 
+         `Aquisições e Contratações Sustentáveis realizadas no período-base` = ACS, 
+         `Percentual de Aquisições e Contratações Sustentáveis` = PCS)
+
+# Criação da tabela formatada
+formattable(ACRACS, list(
+  Ano = formatter("span", style = ~ style(color = "black", font.weight = "bold"))))
+```
+<div style="text-align: justify; text-indent: 2em;">
+Para o tema, foram previstas 6 ações, das quais três estão em andamento, uma foi concluída e duas não foram iniciadas.</div>
+
+Tabela 31. Ações no tema aquisições e contratações 
+```{r, echo=FALSE}
+tabela28 <- data.frame(
+   Ação = c("(A66)", "(A67)", "(A68)", "(A69)", "(A70)", "(A71)"),
+  Descrição = c(
+           "Realizar análise nas contratações referente à adesão aos critérios de sustentabilidade, até agosto de 2024",
+           "Estabelecer diretrizes para monitoramento acerca da adesão dos critérios de sustentabilidade no processo de contratação à fiscalização do contrato, até dezembro de 2024.",
+           "Realizar sensibilização referente à adesão e cumprimento dos critérios de sustentabilidade, anualmente",
+           "Elaborar instrumentos com diretrizes e parâmetros institucionais acerca da adesão dos critérios de sustentabilidade nas contratações e fiscalização de contratos, até 2025",
+           "Verificar possibilidade de inserir no sistema de 'Contratos' campo relacionado aos critérios de sustentabilidade",
+           "Realizar capacitação específica para fiscalização efetiva dos critérios de sustentabilidade na execução contratual, até 2026"),
+  Início = c("01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "22/04/2024"),
+  Fim = c("31/08/2024", "31/12/2024", "31/12/2024", "31/12/2025", "31/12/2024", "31/12/2026"),
+  Situação = c("Em andamento", "Concluído", "Pendente", "Não iniciada", "Em andamento", "Em andamento"))
+
+kable(tabela28, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>16. QUALIDADE DE VIDA E BEM VIVER
+</b> 
+      
+<div style="text-align: justify; text-indent: 2em;">
+Ao definir este tema, a instituição intencionou observar a participação de seus colaboradores(a) em ações solidárias e de qualidade de vida, com vistas ao fomento da valorização do corpo funcional. As ações solidárias foram definidas como aquelas que promovem o voluntariado, a reflexão sobre questões humanitárias e o incentivo a solidariedade, tais como visitas a creches, orfanatos, asilos, bem como ações educacionais para terceirizados (as), como alfabetização e inclusão digital. Já as ações de qualidade de vida foram definidas como aquelas que promovem a motivação, o bem estar, a valorização e o comprometimento dos colaboradores(a), como ginástica laboral e preparação para aposentadoria.</div>
+      
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE} 
+quali_vida <- ipls_atual %>% 
+  filter(Ano == 2024) %>%  # Filtra apenas o ano de 2024
+  separate(Mês_Ano, c("Mes", "Ano")) %>% 
+  mutate(Mes = factor(Mes, levels = c("Jun", "Dez"))) %>%  # Ordena os meses
+  group_by(Mes, Indicador) %>% 
+  summarise(total = sum(Valor, na.rm = TRUE), .groups = "drop") %>% 
+  spread(Indicador, total) %>% 
+  select(Mes, AQV, PQV, PAS, AS, FTT) %>% 
+  filter(!is.na(Mes)) %>%  
+  mutate(
+    PRQV = PQV / (FTT * AQV) * 100,  
+    PRAS = PAS / (FTT * AS) * 100)
+
+#formattable(quali_vida %>% 
+#              select(Mes,
+#                     `Quantidade de ações de qualidade de vida` = AQV,
+#                     `Participações em ações de qualidade de vida` = PQV,
+#                     `Percentual de participantes em ações de qualidade de vida` = PRQV,
+#                     `Participações em ações solidárias` = PAS,
+#                     `Quantidade de ações solidárias` = AS,
+#                     `Percentual de participantes em ações solidárias` = PRAS))
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+A quantidade de ações de qualidade de vida foram 38, tornando por quantitativo de 9664 em participações totais, levando a um percentual de 5,54%. A quantidade de participações em ações solidárias foram 17, apresentando um quantitativo de 5.156, levando a um percentual de 6,60.</div>
+    
+<div style="text-align: justify; text-indent: 2em;">
+O índice de participações em ações de qualidade de vida e ações solidárias é o indicador apontado como ferramenta para esta análise. Ele consiste na aferição do Percentual de Participantes em   Ações de Qualidade de Vida (PRQV) e do Percentual de Participantes em Ações Solidárias (PRAS).</div>
+      
+<div style="text-align: justify; text-indent: 2em;">
+O PRQV por sua vez é o percentual da força de trabalho total participante nas ações de qualidade de vida no trabalho, calculado a partir da seguinte fórmula:</div>
+
+```{r, echo=FALSE}
+tabela_formula <- data.frame(
+  Fórmula = c("PRQV = PQV / (FTT × AQV) × 100"),
+  Explicação = c("Onde: PQV – Participações em ações de qualidade de vida\nAQV – Quantidade de ações de qualidade de vida"))
+
+kable(tabela_formula, format = "html", align = "c", escape = FALSE) %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Como meta para o PRQV definiu-se a manutenção, no exercício de 2024, do percentual de 2% da força de trabalho total participante de ações de qualidade de vida no trabalho. Após a aferição dos dados observou-se que o percentual obtido foi de 12,14% do corpo funcional participante de ações de qualidade de vida, de modo que a meta foi atingida.</div>
+      
+<div style="text-align: justify; text-indent: 2em;">
+Já o PRAS é o percentual da força de trabalho total que participa como voluntária nas ações solidárias em relação ao total do corpo funcional da instituição, calculado a partir da seguinte fórmula:</div>
+```{r, echo=FALSE}
+tabela_pras <- data.frame(
+  Fórmula = c("PRAS = PS / (FTT × AS) × 100"),
+  Explicação = c("Onde: PAS – Participações em ações solidárias\nAS – Quantidade de ações solidárias\nFTT: Força Total de Trabalho"))
+
+kable(tabela_pras, format = "html", align = "c", escape = FALSE) %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```    
+<div style="text-align: justify; text-indent: 2em;">
+Em relação ao PRAS definiu-se como meta um aumento de 2% em 2024 da força de trabalho total participante de ações solidárias. O percentual foi aferido, obtendo-se o valor de 2,71% de participações do corpo funcional em ações solidárias. Foram realizadas 17 ações, e estas são descritas no Apêndice.</div>
+      
+<div style="text-align: justify; text-indent: 2em;">
+Com relação às intervenções apontadas no PS, 14 foram criadas para o assunto em análise, todas com início previsto ainda em 2024. Destas, seis encontram-se em andamento, quatro não foram iniciadas, e quatro foram concluídas conforme descrito a seguir:</div>
+      
+Tabela 33. Ações no tema Qualidade de Vida e Bem Viver
+```{r, echo=FALSE}
+tabela30 <- data.frame(
+   Ação = c("(A72)", "(A73)", "(A74)", "(A75)", "(A76)", "(A77)", "(A78)", "(A79)", "(A80)", "(A81)", "(A82)", "(A83)", "(A84)", "(A85)"),
+  Descrição = c(
+           "Realizar, anualmente, 10 ações de cuidado preventivo com a saúde.",
+           "Monitorar a aplicação do Inventário de Avaliação de Qualidade de Vida no Trabalho no âmbito do PJRO",
+           "Criar, até 2025, programa de fomento a práticas desportivas em grupo ou individuais (Implantação do Gympass e Corrida do Judiciário).",
+           "Realizar, anualmente, pesquisa sobre as condições laborais dos servidores e magistrados, apresentando ao final de cada período relatório dos dados colhidos e ações de enfrentamento aos eventuais problemas encontrados.",
+           "Apresentar, até final de 2024, estudo sobre a possibilidade de home office, teletrabalho e horário flexível, juntamente com eventual normatização.",
+           "Aumentar anualmente, até 2026, 4,5% do número de vagas ofertadas no Projeto Saúde Financeira.",
+           "Ampliar o Programa de Preparação à Aposentadoria.",
+           "Implementar em 5 comarcas, até 2026, o projeto 'Liga do Bem Viver'.",
+           "Fomentar o aumento de 5% de participação do corpo funcional em campanhas de arrecadação de alimentos e tampinhas durante a Gincana do Judiciário, até final de 2026.",
+           "Fomentar o aumento de 5% de participação do corpo funcional em campanha de Doação de Livros, até final de 2026.",
+           "Fomentar o aumento de 5% de participação do corpo funcional em campanha de Doação de Sangue e Medula Óssea, até final de 2026.",
+           "Fomentar o aumento de 5% de participação do corpo funcional em campanhas para arrecadação de brinquedos e alimentos à crianças e famílias carentes ou vestuário/utensílios a pessoas em situação de vulnerabilidade econômica, social ou situação de doença, até final de 2026.",
+           "Elaborar estudo para a instituição e regulamentação de selo de reconhecimento às ações de solidariedade realizadas pelas Comarcas (selo 'Comarca Solidária') até 2025.",
+           "Criar, até 2025, programa de solidariedade voltado ao bem estar animal."),
+  Início = c("01/04/2024", "04/12/2024", "05/02/2024", "04/12/2024", "01/04/2024", 
+             "01/04/2024", "01/06/2024", "01/04/2024", "01/04/2024", "01/04/2024",
+             "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024"),
+  Fim = c("31/01/2024", "17/02/2025", "31/12/2024", "31/12/2024", "31/12/2024",
+          "31/01/2026", "31/12/2026", "31/12/2026", "31/12/2026", "31/12/2026",
+          "31/12/2026", "31/12/2026", "31/12/2025", "31/12/2025"),
+  Situação = c("Concluída", "Em andamento", "Concluída", "Concluída", 
+               "Concluída", "Em andamento", "Em andamento", "Não iniciada", 
+               "Em andamento", "Não iniciada", "Em andamento", "Em andamento", 
+               "Não iniciada", "Não iniciada"))
+
+kable(tabela30, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Em relação às ações A75, A76, A80 e A82 far-se-ão necessárias algumas considerações.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A ação A75 (Realizar, anualmente, pesquisa sobre as condições laborais dos servidores (as) e magistrados, apresentando ao final de cada período relatório dos dados colhidos e ações de enfrentamento aos eventuais problemas encontrados) foi considerada como realizada tendo em vista que seu início se deu em 04/12/2024. A consolidação de dados, apresentação de relatórios e publicação foi considerada consequência desta pesquisa e que será utilizada como parâmetro para melhoria de ações no ano de 2025.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A ação A76 (Apresentar, até final de 2024, estudo sobre a possibilidade de home office, teletrabalho e horário flexível, juntamente com eventual normatização) foi considerada como realizada, pois segundo a unidade guardiã, as providências relativas à análise técnica/estudo já foram concluídas tendo sido encaminhadas para deliberação da Alta Administração.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A ação A80 (Fomentar o aumento de 5% de participação do corpo funcional em campanhas de arrecadação de alimentos e tampinhas durante a Gincana do Judiciário, até final de 2026) e a ação 82 (Fomentar o aumento de 5% de participação do corpo funcional em campanha de Doação de Sangue e Medula Óssea, até final de 2026) tem como situação  de realização “Em andamento”, pois apesar de sua realização ser anual, seu objetivo refere-se a um aumento mínimo de 5% até o final de 2026.</div>
+
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>17. CAPACITAÇÃO E SENSIBILIZAÇÃO PARA SUSTENTABILIDADE AMBIENTAL E SOCIAL
+</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+O tópico capacitação e sensibilização em sustentabilidade integra o PS 2024-2026 para possibilitar o controle da participação do corpo funcional em ações de capacitação e sensibilização relacionadas à sustentabilidade de forma a subsidiar a tomada de decisões quanto ao estímulo de atividades nessas temáticas.</div>
+    
+Tabela 34. Indicadores de Capacitações em Sustentabilidade
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+cap <- ipls_atual %>% 
+  filter(Ano == 2024) %>%  # Filtra apenas o ano de 2024
+  separate(Mês_Ano, c("Mes", "Ano")) %>% 
+  filter(Mes == "Dez") %>%  # Mantém apenas os dados de dezembro
+  mutate(Ano = "2024") %>%  # Substitui Dez por 2024
+  group_by(Ano, Indicador) %>% 
+  summarise(total = sum(Valor, na.rm = TRUE), .groups = "drop") %>% 
+  spread(Indicador, total) %>%  
+  select(Ano, ACap, Asen, PCap, FTT) %>%  # Seleciona as colunas desejadas
+  filter(!is.na(Ano)) %>%  # Remove linhas com valores NA
+  mutate(
+    PRCap = (PCap / (FTT * ACap)) * 100)  # Calcula o percentual de participação
+
+cap_legendas <- cap %>%
+  rename(
+    `Ações de Capacitação em Sustentabilidade` = ACap,
+    `Ações de Sensibilização em Sustentabilidade` = Asen,
+    `Participação em Ações de Capacitação` = PCap,
+    `Força de Trabalho` = FTT,
+    `Percentual de Participação em Capacitação` = PRCap)
+
+# Criando a tabela sem formatação de cores
+formattable(cap_legendas, 
+            list(
+              `Percentual de Participação em Capacitação` = formatter("span",
+                                                                      x ~ sprintf("%.2f%%", x))))  
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+O indicador criado pela Resolução n. 400-CNJ, busca identificar o percentual de participantes nas  ações de capacitação relacionadas à temática socioambiental em relação à força de trabalho total do órgão, ou seja, qual a porcentagem por ação da participação da força de trabalho deste Tribunal. A fórmula expressa-se de seguinte forma:</div>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}    
+# Criando a tabela de Fórmula
+tabela_formula <- data.frame(
+  Fórmula = "PRCap = (PCap / (FTT × Acap)) × 100")
+
+# Criando a tabela de Explicação
+tabela_explicacao <- data.frame(
+  `Onde` = c(
+    "PCap – Total de participações em ações de capacitação durante o período-base",
+    "FTT – Força Total de Trabalho",
+    "Acap – Total de ações de capacitação durante o período-base"))
+
+# Exibindo a tabela de Fórmula (centralizada)
+kable(tabela_formula, format = "html", align = "c", escape = FALSE) %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+# Exibindo a tabela de Explicação (alinhada à esquerda)
+kable(tabela_explicacao, format = "html", align = "l", escape = FALSE) %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+Conforme os dados obtidos:
+FTT = 4.593
+ACap = 22
+PCap = 2.605 
+PRCap = (2.605/(4.593x22)) x 100
+PRCap= 2,46%
+
+<div style="text-align: justify; text-indent: 2em;">
+O valor de 2,46% encontrado expressa a relação entre a força total de trabalho e o quantitativo de  participantes nas ações de capacitação realizadas.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A meta instituída para este tema foi o de capacitar e sensibilizar diretamente, no mínimo, 15% do corpo funcional, até 2026 na temática ambiental e social, sendo 5% ao ano, a partir do ano em análise. Tal meta objetiva identificar a porcentagem de pessoas capacitadas dentre a força total de trabalho, assim, o cálculo deste valor traduz-se na fórmula: (PCap/FTT) x 100 </div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Como a meta busca uma grandeza simples (capacitar e sensibilizar 5% do corpo funcional, por ano) o resultado obtido foi de 56,71% da força total de trabalho, de modo que, a meta foi atingida.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+As ações relacionadas à matéria vão da A86 a A91 no planejamento. A execução das ações A86 a A89 e A91, são de caráter anual, tendo sido realizadas no ano de 2024. A ação A90, tem como principal objetivo a capacitação de todos os gestores, até 2026, em Comunicação Não Violenta, por este motivo, encontra-se em andamento.</div>
+  
+Tabela 35. Ações no tema capacitação e sensibilização para sustentabilidade ambiental e social
+```{r, echo=FALSE}
+tabela32 <- data.frame(
+   Ação = c("(A86)", "(A87)", "(A88)", "(A89)", "(A90)", "(A91)"),
+  Descrição = c(
+           "Realizar, anualmente, ao menos um evento em parceria com a Ecoliga de Rondônia sobre Sustentabilidade.",
+           "Realizar ao menos uma capacitação anual sobre a Política de Governança das Contratações Públicas, considerando a política do Conselho Nacional de Justiça (CNJ) e a norma correspondente no âmbito do PJRO.",
+           "Introduzir, quando possível, em todos os cursos ministrados pelo TJRO (pós-graduação, curso de formação e capacitações), abordagens destinadas à sensibilização dos discentes e demais envolvidos no que tange à sustentabilidade ambiental e social.",
+           "Realizar, anualmente, ao menos uma capacitação específica e um evento de sensibilização destinado ao público interno e externo sobre os Objetivos de Desenvolvimento Sustentável (ODS) no âmbito do Poder Judiciário do Estado de Rondônia.",
+           "Oferecer, anualmente, no mínimo duas capacitações sobre Comunicação Não Violenta aos gestores, com a participação de todos até 2026.",
+           "Oferecer, anualmente, no mínimo uma capacitação ao corpo funcional no uso de Linguagem Simples."),
+  Início = rep("01/04/2024", 6),
+  Fim = c("31/12/2024", "31/12/2024", "31/12/2024", "31/12/2025", "31/12/2026", "31/12/2024"),
+    Situação = c("Concluída", "Concluída", "Concluída", "Concluída", 
+               "Em andamento", "Concluída"))
+
+kable(tabela32, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+<div style="text-align: justify; text-indent: 2em;">
+As capacitações e sensibilizações realizadas em atenção ao plano de ações estão elencadas no apêndice deste Relatório.</div>
+
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>18. EQUIDADE E DIVERSIDADE 
+</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Com o objetivo de promover a inclusão e a equidade de oportunidades e tratamento aos membros de grupos discriminados em função do gênero, da cor, raça, etnia, origem, sexo, deficiências, idade, crenças, orientação sexual e outros, o Plano de Sustentabilidade (Ato n. 610/2024), estabeleceu duas grandes metas, uma referente  ao percentual da força de trabalho total participante de ações relacionadas à equidade e à diversidade e outra quanto à conclusão de etapas das políticas institucionais elencadas pelo PJRO como de relevância. Conforme anotado do Plano de Sustentabilidade:
+</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Meta 21 : Capacitar e sensibilizar diretamente, no mínimo, 6% (quinze por cento) do corpo funcional, até 2026, nas temáticas relacionadas à Equidade e à Diversidade (PRED).</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Meta 22 : Alcançar 100% das etapas previstas anualmente para cada ação de Política Institucional.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Importante informar que verificou-se erro material na fórmula apresentada na Meta 21. Na sua publicação consta que a métrica a ser analisada se expressa pela fórmula PRED = (PEID / FTT x QED) * 100, ocorre que a correta apresentação se expressa na seguinte fórmula: PRED = PEID /( FTT x QED) * 100.</div> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Tais indicadores são destinados ao monitoramento desta evolução da cultura institucional quanto à temática de equidade e diversidade. O primeiro destes indicadores é destinado ao monitoramento do índice de ações de equidade e diversidade, traduzindo-se no percentual da força de trabalho total participante de ações relacionadas à equidade e à diversidade.</div> 
+
+<div style="text-align: justify; text-indent: 2em;">
+A meta relacionada a este indicador foi capacitar e sensibilizar diretamente, no mínimo, 2% do corpo funcional, nas temáticas relacionadas à equidade e à diversidade. Houve 2.883 participantes em 31 ações de capacitação e sensibilização em equidade e diversidade, resultando em um índice de 2,02% do corpo funcional, acima da meta, portanto.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+O segundo indicador incluído no Plano de Sustentabilidade está  relacionado ao índice de implementação das Políticas de Equidade e Diversidade.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A meta a ele relacionada foi: Alcançar 100% das etapas previstas anualmente para cada ação de Política Institucional. Tal meta busca o monitoramento contínuo para a implantação das políticas institucionais inseridas no Plano de Sustentabilidade, e concluiu-se que a métrica eficiente para sua medição seria a de quantidade de políticas propostas/criadas em relação com as etapas preestabelecidas e concluídas de cada uma delas. Ou seja, espera-se que a cada ano etapas para implementação da política sejam realizadas, considerando assim a meta de cada política 100% concluída.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Das ações constantes no PS relacionadas às políticas institucionais apenas a de número 103 (Instituir, até o final de 2024, o Regimento Interno do Comitê Gestor Interinstitucional da Política de Equidade de Gênero, Raça e Diversidade) não alcançou 100% de suas etapas, justamente porque esta política deveria ter sua implantação finalizada ainda em 2024.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Assim, 80% das etapas das ações relacionadas  à implementação das Políticas de Equidade e Diversidade previstas para 2024 foram concluídas, contudo, a meta não foi alcançada em sua totalidade.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+As capacitações e sensibilizações realizadas em atenção ao plano de ações estão elencadas no apêndice deste Relatório, mas pode-se observar na tabela abaixo a situação que se encontra cada uma das ações, destacando que, as capacitações que tem como meta de aferição final o ano de 2026, já foram iniciadas inclusive com cursos/capacitações realizadas, mas sem que a totalidade de participantes específicos fosse atingida, deste modo, ainda que tenha havido as capacitações, considerou-se a ação como situação “Em andamento”.</div>
+
+Tabela 36. Ações em Equidade e Diversidade
+```{r, echo=FALSE}
+###Tabela 36. Ações em Equidade e Diversidade
+acoes_equidade_diversidade <- data.frame(
+   Ação = c("(A92)", "(A93)", "(A94)", "(A95)", "(A96)", "(A97)", "(A98)", "(A99)", "(A100)", "(A101)", "(A102)", "(A103)", "(A104)", "(A105)", "(A106)"),
+  Descrição = c(
+    "Realizar, ao menos anualmente, um curso de capacitação em diversidade, gênero e raça, em um dos eixos temáticos ou interseccionados, para corpo funcional.",
+    "Promover capacitação específica para todos os gestores, até 2026, na temática de diversidade, gênero e raça.",
+    "Realizar, ao menos, três seminários e/ou eventos diversidade, gênero e raça, em um dos eixos temáticos ou interseccionados, para corpo funcional, até 2026.",
+    "Realizar ao menos, anualmente, duas campanhas de sensibilização específicas, com linguagem simples e exemplos práticos, versando sobre diversidade, gênero e raça.",
+    "Realizar, anualmente, dois eventos voltados para o corpo funcional na temática de Prevenção e Combate ao Assédio Moral, Sexual e Discriminação.",
+    "Oferecer, anualmente, capacitação na temática de Prevenção e Combate ao Assédio Moral, Sexual e Discriminação, para o corpo funcional.",
+    "Oferecer, capacitação específica aos gestores temática de Prevenção e Combate ao Assédio Moral, Sexual e Discriminação, capacitando todos até 2026.",
+    "Realizar uma ação de capacitação ou seminário, anualmente, que abordem a temática liberdade religiosa com vistas à promoção da diversidade e Combate à Intolerância no âmbito do PJRO, para o corpo funcional.",
+    "Realizar uma ação de capacitação ou seminário, anual, com vistas à garantia do direito ao acesso ao Judiciário de pessoas e povos indígenas e os temas a ele correlatos, voltados para o corpo funcional.",
+    "Oferecer, anualmente, curso sobre o Protocolo de Julgamento sob Perspectiva de Gênero aos magistrados e assessores que atuem sob este enfoque.",
+    "Implementar, até 2026, as diretrizes e procedimentos para efetivar a garantia do direito ao acesso ao Judiciário de pessoas e povos indígenas.",
+    "Instituir, até o final de 2024, o Regimento Interno do Comitê Gestor Interinstitucional da Política de Equidade de Gênero, Raça e Diversidade.",
+    "Criar, até final de 2025, no âmbito do Poder Judiciário do Estado de Rondônia, Comissão Permanente de Política de Gênero, Raça e Diversidade.",
+    "Estabelecer, até final de 2026, política interna de Incentivo à Participação Feminina no PJRO.",
+    "Rever, anualmente, as rotinas de processamento de casos de Assédio Moral, Sexual e Discriminação."),
+  Início = rep("01/04/2024", 15),
+  Fim = c(
+    "31/12/2024", "31/12/2026", "31/12/2026", "31/12/2024", 
+    "31/12/2024", "31/12/2024", "31/12/2026", "31/12/2024",
+    "31/12/2024", "31/12/2024", "31/12/2024", "31/12/2024",
+    "31/12/2024", "31/12/2024", "31/12/2024"),
+  Situação = c(
+    "Concluída", "Em andamento", "Em andamento", "Concluída",
+    "Concluída", "Concluída", "Em andamento", "Pendente",
+    "Concluída", "Concluída", "Concluída", "Em andamento",
+    "Concluída", "Concluída", "Concluída"))
+
+# Exibir tabela formatada
+kable(acoes_equidade_diversidade, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed")) 
+
+```
+<div style="text-align: justify; text-indent: 2em;">
+Por fim, importante informar que em 03 de abril de 2024, por meio da Resolução n. 550, foi alterada a Resolução n. 400/2021 - CNJ, sendo incluído em seu anexo indicadores específicos para o tema Equidade e Diversidade. O objetivo destes indicadores é o de monitoramento da cultura organizacional voltada para a diversidade da força de trabalho e a equidade por meio:</div> 
+
+- Da identificação da força de trabalho e da composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação, segundo o sexo, a identidade étnico racial e entre pessoa com deficiência;  
+- Do atendimento ao direito fundamental de igualdade entre homens e mulheres (art. 5º, I, da Constituição Federal de 1988). A análise do cenário busca verificar a igualdade de oportunidades entre mulheres e homens, focada no equilíbrio entre a vida profissional e pessoal;  
+- Da quantificação das ações de capacitação e sensibilização específicas da temática Equidade e Diversidade; e
+- Das contratações de mulheres em condição de especial vulnerabilidade econômico-social, nos termos da Resolução CNJ nº 497/2023.
+
+<div style="text-align: justify; text-indent: 2em;">
+A alteração trazida pela Resolução n. 550/2024 apenas exigiu a quantidade de capacitações e sensibilizações realizadas pela instituição ou em parcerias, computando-as separadamente. Como é possível identificar, foram realizadas ações de capacitação e sensibilização acima de um.</div> 
+
+Tabela 37. Variáveis Equidade e Diversidade
+```{r, echo=FALSE}
+tabela_37 <- data.frame(
+   Número = c("19.1", "19.2"),
+    Indicador = c(
+    "ACapED – Ações de capacitação em equidade e diversidade",
+    "ASenED – Ações de sensibilização em equidade e diversidade"),
+  Quantidade = c(22, 9))
+
+kable(tabela_37, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+<div style="text-align: justify; text-indent: 2em;">
+Há ainda um outro conjunto de variáveis que passaram recentemente a integrar a relação estabelecida no anexo único da Resolução CNJ n. 400/2021, e por este motivo passaram a ser monitorados por este poder, estes são apresentados a seguir:</div> 
+
+Tabela 38. Variáveis Equidade e Diversidade (Força de Trabalho)
+```{r, echo=FALSE}
+tabela_38 <- data.frame(
+   Número = c("19.3", "19.4","19.5", "19.6","19.7", "19.8","19.9", "19.10","19.11", "19.12","19.13", "19.14","19.15", "19.16",
+              "19.17", "19.18","19.19", "19.20","19.21", "19.22","19.23", "19.24","19.25", "19.26","19.27", "19.29", "19.42", "19.43"),
+    Indicador = c(
+    "MagPF – Total magistradas do sexo feminino",
+    "PMagPF – Percentual de magistradas do sexo feminino",
+    "MagPN – Total magistrados(as) negros(as)",
+    "PMagPN – Percentual de magistrados(as) negros(as)",
+    "MagPI – Total de magistrados(as) indígenas",
+    "PMagPI – Percentual de magistrados(as) indígenas",
+    "MagPD – Total de magistrados(as) com deficiência",
+    "PMagPD – Percentual de magistrados(as) com deficiência",
+    "ServC – Total de servidores(as) ocupantes de cargo de chefia",
+    "ServCF – Total de servidoras ocupantes de cargo de chefia",
+    "PServCF – Percentual de servidoras ocupantes de cargo de chefia",
+    "ServCN – Total de servidores(as) negros(as) ocupantes de cargo de chefia",
+    "PServCN – Percentual de servidores(as) negros(as) ocupantes de cargo de chefia",
+    "ServCI – Total de servidores(as) indígenas ocupantes de cargo de chefia",
+    "PServCI – Percentual de servidores(as) indígenas ocupantes de cargo de chefia",
+    "ServCD – Total de servidores(as) com deficiência ocupantes de cargo de chefia",
+    "PServCD – Percentual de servidores(as) com deficiência ocupantes de cargo de chefia",
+    "TFAuxF – Total de mulheres da força de trabalho do quadro auxiliar",
+    "PTFauxF – Percentual de mulheres no quadro auxiliar",
+    "TFAuxN – Total de negros(as) da força de trabalho do quadro auxiliar",
+    "PTFAuxN – Percentual de profissionais do quadro auxiliar negros(as)",
+    "TFAuxI – Total de indígenas da força de trabalho do quadro auxiliar",
+    "PTFAuxI – Percentual de profissionais do quadro auxiliar indígenas",
+    "TFAuxD – Total da força de trabalho do quadro auxiliar com deficiência",
+    "PTFAuxD – Percentual de profissionais do quadro auxiliar com deficiência",
+    "PTFAuxTFV – Percentual de mulheres terceirizadas em condição de vulnerabilidade econômico-social",
+    "PGF – Percentual de mulheres na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "PGFNI – Percentual de mulheres negras ou indígenas na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação"),
+  Quantidade = c(
+    59, "33,71%", 46, "26,29%", 0, 0, 4, "2,29%", 378, 179, "47,35%", 196, "41,85%", 2, "0,53%", 6, "1,59%", 491, "62,23%", 476, "60,33%", 4, "0,51%", 6, "0,76%", "0,02%", "0,66%", "0,51%"))
+
+kable(tabela_38, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+```
+
+Tabela 39. Variáveis Equidade e Diversidade (Vulnerabilidade econômico-social)
+```{r, echo=FALSE}
+tabela_39 <- data.frame(
+   Número = c("19.28", "19.30","19.31", "19.32","19.33", "19.34","19.35", "19.36","19.37", "19.38","19.39", "19.40","19.41"),
+    Indicador = c(
+    "TFAuxTFV – Total de trabalhadoras terceirizadas em condição de vulnerabilidade econômico-social",
+    "MagPG – Total de magistrados(as) na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "MagPGF – Total de magistradas na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "MagPGFN – Total de magistradas do sexo feminino e negras na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "MagPGMN – Total de magistrados do sexo masculino e negros na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "MagPGFI – Total de magistradas do sexo feminino e indígenas na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "MagPGMI – Total de magistrados do sexo masculino e indígenas na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "ServG – Total de servidores (as) na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "ServGF – Total de servidoras na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "ServGFN – Total de servidoras do sexo feminino e negras na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "ServGMN – Total de servidores do sexo masculino e negros na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "ServGFI – Total de servidoras do sexo feminino e indígenas na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação",
+    "ServGMI – Total de servidores do sexo masculino e indígenas na composição de comissões, comitês, grupos de trabalho ou outros coletivos de livre indicação"),
+  Quantidade = c(7, 53, 23, 8, 13, 0, 0, 94, 75, 42, 53, 0, 1))
+
+kable(tabela_39, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+```
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>19. ACESSIBILIDADE E INCLUSÃO DA PESSOA COM DEFICIÊNCIA
+</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Com o objetivo de promover a inclusão das pessoas com deficiência, por meio de adoção de medidas apropriadas para eliminar e prevenir quaisquer barreiras urbanísticas, arquitetônicas, atitudinais, comunicacionais, tecnológicas e nos transportes. Foram estabelecidas ações relativas às acessibilidades, de forma que estas impulsionassem o alcance das metas. Para tanto, foram planejados indicadores para aferir o desempenho e mensuração do alcance das metas estabelecidas. Estes indicadores são definidos em grandes cinco eixos compostos por variáveis.</div> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Cinco foram os indicadores definidos:</div>
+
+- Índice de Gestão de Acessibilidade e Inclusão;
+- Índice de Acessibilidade em Serviços;
+- Índice de Acessibilidade Comunicacional;
+- Índice de Acessibilidade Tecnológica;
+- Índice de Acessibilidade Urbanística e Arquitetônica;
+
+<div style="text-align: justify; text-indent: 2em;">
+Para aferir o alcance da meta de aumentar anualmente em 50% a quantidade de estagiários com deficiência foi criado o índice de Gestão de Acessibilidade e Inclusão. Ao fim do período avaliado observou-se que integravam o quadro da instituição oito estagiários(as) com deficiência, número 100% maior que o observado no ano anterior, de modo que considera-se que a meta referida (M23) foi atingida.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A meta 24 que direciona a capacitação, até dezembro de 2026, 25% de magistrados(as) e 25% de servidores (as) nas temáticas de acessibilidade e inclusão das pessoas com deficiência, também foi atingida e com folga. Do corpo de magistrados(as), foram capacitados na temática 42% do total de 173 (cento e setenta e três). E servidores (as), 39% do total de 3.567 (três mil, quinhentos e sessenta e sete).</div>  
+
+<div style="text-align: justify; text-indent: 2em;">
+O índice de Acessibilidade Comunicacional foi criado para auxiliar o acompanhamento da meta 24, que é “realizar, anualmente, no mínimo, 70% dos eventos do PJRO com acessibilidade comunicacional.” Dos eventos presenciais ou à distância,  foram realizados um total de 81 (oitenta e um), (SEI n. 0001656-88.2025.8.22.8000). Destes, 72 foram acessibilizados em Libras, perfazendo um total de 89% de eventos acessíveis. </div> 
+
+<div style="text-align: justify; text-indent: 2em;">
+A meta 26, que visa alcançar anualmente, no mínimo, 95% na avaliação do Avaliador e Simulador de Acessibilidade em Sítios (ASES), com a disponibilização dos recursos tecnológicos de acessibilidade: programa leitor de tela, aplicativos associados a programas sintetizadores de voz, ferramenta de contraste, programa de ampliação de tela. A avaliação resultou em 88% de acessibilidade no sítio eletrônico da instituição. De modo que esta meta não foi atingida.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A última meta, a de número 27, foi a de garantir que todas as novas obras e/ou reformas em todos os prédios obedeçam ao Plano de Obras, respeitando a NBR 9050, conforme os respectivos cronogramas das obras e o orçamento aprovado para os respectivos exercícios. O Índice de Acessibilidade Urbanística e Arquitetônica foi criado para avaliar o alcance desta meta. Sem desempenho desta meta.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Assim como nas demais temáticas, outras variáveis são acompanhadas para verificar o desempenho no contexto institucional, na Tabela 35. Variáveis Acessibilidade e Inclusão da pessoa com deficiência são apresentados os valores verificados no período de análise.</div>
+
+Tabela 40. Variáveis Acessibilidade e inclusão da pessoa com deficiência
+```{r, echo=FALSE}
+tabela_40 <- data.frame(
+  Categoria = c(
+    "**Gestão da acessibilidade e inclusão**", 
+    "MagP(PcD) - Quantidade de magistrados(as) com deficiência.",
+    "TPEft/TPI (PcD) - Quantidade de servidores(as) com deficiência.",
+    "TPSV (PcD) - Quantidade de servidores(as) comissionados com ou sem vínculo com deficiência.",
+    "TPFC (PcD) - Quantidade de servidores(as) com função comissionada com deficiência.",
+    "TFAuxE (PcD) - Quantidade de estagiários(as) com deficiência.",
+    "TFAuxT (PcD) - Quantidade de trabalhadores terceirizados(as) com deficiência.",
+    "TFAuxC (PcD) - Quantidade de conciliadores(as) com deficiência.",
+    "TFAuxJL (PcD) - Quantidade de juízes(as) leigos(as) com deficiência.",
+    "TFauxSP (PcD) - Quantidade de trabalhadores(as) com deficiência que atuam em serventias judiciais privatizadas.",
+    "TFAuxV (PcD) - Quantidade de voluntários(as) com deficiência.",
+    "TFAuxApr (PcD) - Quantidade de aprendizes com deficiência.",
+    
+    "**Acessibilidade em serviços**", 
+    "Quantidade de cursos oferecidos na temática de acessibilidade e inclusão da pessoa com deficiência no ano-base.",
+    "Quantidade de vagas oferecidas em cursos na temática de acessibilidade e inclusão da pessoa com deficiência no ano-base.",
+    "QLibrasServ - Quantidade de servidores(as) do Quadro de Pessoal Capacitados em Libras no período-base.",
+    "QLibrasAux - Quantidade de pessoas do quadro auxiliar capacitadas em Libras no período-base.",
+    "Proporção de gestores(as) capacitados(as) nas temáticas de acessibilidade e inclusão das pessoas com deficiência.",
+    "Quantidade de servidores(as) capacitados(as) na unidade de Gestão de Pessoas para o pleno atendimento de pessoa com deficiência.",
+    "Quantidade de servidores(as) capacitados(as) na unidade de Tecnologia da Informação capacitados(as) em normas de acessibilidade digital.",
+    "Quantidade de servidores(as) capacitados(as) na unidade de Engenharia e/ou Arquitetura capacitados(as) em normas de acessibilidade urbanística e arquitetônica.",
+    "Quantidade de ações de sensibilização com objetivo de fomentar mudanças atitudinais que favoreçam a ampliação da acessibilidade e inclusão.",
+    "QACpi - Quantidade de Ações de promoção da inclusão",
+    "QCont.Libras - Proporção de contratos que envolvam atendimento ao público externo providos por pessoas aptas na comunicação em Libras em relação ao total de contratos no período-base",
+    
+    "**Acessibilidade comunicacional**",
+    "VAcess - Quantidade de Vídeos Produzidos Com Recursos de Acessibilidade.",
+    "MAcess - Quantidade de matérias jornalísticas disponibilizadas em formato acessível.",
+    "A ouvidoria da instituição disponibiliza formas de comunicação alternativas acessíveis para atendimento ao público com deficiência?",
+    "Proporção de eventos, presenciais ou à distância, promovidos pela instituição disponibilizados por meios de comunicação acessível em relação a quantidade de eventos totais",
+    
+    "**Acessibilidade tecnológica**",
+    "O órgão utiliza programas para avaliar o nível de acessibilidade do seu site e de seus links?",
+    "O órgão fornece alguma tecnologia assistiva que permita o uso de computadores por pessoa com deficiência visual, acentuada ou total?",
+    "O órgão fornece algum programa para pessoas com deficiência (público interno e/ou externo) para uso nos aplicativos de videoconferência?"),
+  Quantidade = c(
+    "", 4, 118, 18, 26, 8, 10, 6, 0, 0, 0, 0, 
+    "", 15, "1.606", 37, 34, "17.08%", 8, 5, 10, 5, "2", "100%",
+    "", 298, 1327, "Sim", "90%",
+    "", "Sim", "Sim", "Sim"),
+  Referencia = c(
+    "", 4576366, 4593846, 4593846, 4593846, 4593846, 4593151, 4593846, "Não se aplica", "Não se aplica", 4593846, 4635933,
+    "", "Capacitações da Emeron", 4596066, 4593846, 4607089, 4593846, 4596066, 4593846, 4592053, "0001708-84.2025; 0021727-48.2024; 0008162-22.2021; 0001715-47.2024; 4206499", "1. Gincana; 2. I Corrida do Judiciário", 4593151,
+    "", 4624143, 4624143, " ", 4655613,
+    "", 4587234, 4594074, "4587234; 4587550"))
+
+kable(tabela_40, format = "html", align = "c", col.names = c("Indicador", "Quantidade", "Referência")) %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("condensed")) %>%
+  column_spec(1, width = "50%") %>%
+  column_spec(2, width = "25%") %>%
+  column_spec(3, width = "25%")
+```
+
+
+
+<div style="text-align: justify; text-indent: 2em;">
+Dentre as 23 ações criadas para contribuir para o alcance dos objetivos e metas da temática, 12 foram concluídas, sete encontram-se em andamento e uma, a ação (A115) Realizar capacitação para todos(as) psicólogos e assistentes sociais que atuam em atendimento, para o pleno atendimento de pessoa com deficiência até 2026, foi declinada.</div>
+
+Tabela 41. Ações do tema Acessibilidade e Inclusão da Pessoa com Deficiência
+```{r, echo=FALSE}
+tabela_41 <- data.frame(
+   Ação = c("(A107)", "(A108)", "(A109)", "(A110)", "(A111)", "(A112)", "(A113)", "(A114)", "(A115)", "(A116)", "(A117)", "(A118)", "(A119)", "(A120)",
+            "(A121)", "(A122)", "(A123)", "(A124)", "(A125)", "(A126)", "(A127)", "(A128)", "(A129)"),
+    Descrição = c(
+    "Criar estratégias de divulgação e marketing com ampla repercussão e altamente acessível de forma a alcançar a comunidade PcD escolar e universitária para processo seletivo para estagiários(as).",
+    "Implementar projeto para ingresso de estagiários com deficiência, até 2024.",
+    "Implementar acordo técnico junto a Pestalozzi para ingresso de estagiários com deficiência.",
+    "Capacitar 25% de servidores e magistrados nas temáticas de acessibilidade e inclusão de pessoas com deficiência.",
+    "Realizar capacitação em Libras para 70% do quadro de servidores e magistrados até 2026.",
+    "Promover a aptidão em Comunicação em Libras para 50% do quadro auxiliar de agentes de portaria, até 2026.",
+    "Realizar capacitação de acessibilidade e inclusão das pessoas com deficiência para todos(as) os(as) gestores(as) até 2026.",
+    "Realizar capacitação para todos(as) os(as) servidores(as) da unidade de Gestão de Pessoas (SGP), que atuam em atendimento, para o pleno atendimento de pessoa com deficiência até 2026.",
+    "Realizar capacitação para todos(as) psicólogos e assistentes sociais que atuam em atendimento, para o pleno atendimento de pessoa com deficiência até 2026.",
+    "Realizar capacitação em normas de acessibilidade digital para servidores(as) da Secretaria de Tecnologia da Informação e Comunicação (Stic) para servidores com relação direta ao tema.",
+    "Realizar capacitação em normas de acessibilidade urbanística e arquitetônica para servidores(as) do Departamento de Engenharia e Arquitetura (Dea).",
+    "Realizar quatro ações de sensibilização sobre acessibilidade e inclusão da pessoa com deficiência, anualmente.",
+    "Realizar duas ações de inclusão destinadas às pessoas com deficiência ou com mobilidade reduzida, anualmente (ex: eventos destinados ao lazer, à saúde e à cultura).",
+    "Realizar contratação de empresa especializada, ou outra solução, para o atendimento de recursos de acessibilidade (ex: legenda, janela de libras, audiodescrição) em vídeos e manifestações públicas (audiências, eventos presenciais e online).",
+    "Adequar as matérias jornalísticas disponibilizadas no site em formato acessível (ex: descrição para as imagens que transmitem conteúdo, descrição de links com texto explicativo, alternativas para áudio e vídeo: legenda, transcrição textual, Libras, audiodescrição).",
+    "Institucionalizar Política de Eventos Institucionais, garantindo a acessibilidade e inclusão das pessoas com deficiência.",
+    "Realizar as reformas e alteração de leiaute conforme diagnóstico realizado nas edificações para atender critérios de acessibilidade previstos na NBR 9050, até 2026.",
+    "Realizar contratação de consultoria especializada em acessibilidade digital e comunicacional para diagnóstico com recomendações e apresentação de manual com diretrizes, até 2025.",
+    "Instituir três projetos de Linguagem Simples com foco na prestação jurisdicional, até 2026.",
+    "Instituir Central de Inclusão e Acessibilidade para atendimento jurisdicional.",
+    "Instituir atendimento em Libras na Ouvidoria, até 2025.",
+    "Realizar estudo de viabilidade para acessibilização em Braille.",
+    "Promover adequações no Centro Cultural e de Documentação Histórica para garantir acessibilidade e inclusão das pessoas com deficiência, até 2026."),
+  Início = c(
+    "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024",
+    "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/07/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024", "01/04/2024",
+    "01/04/2024", "01/04/2024", "01/04/2024"),
+  Fim = c(
+    "31/12/2026", "31/12/2024", "31/12/2026", "31/12/2026", "31/12/2026", "31/12/2026", "31/12/2026", "31/12/2026", "31/12/2026", "31/12/2026", 
+    "31/12/2026", "31/12/2026", "31/12/2026", "31/12/2024", "31/12/2026", "30/07/2024", "31/12/2026", "31/12/2025", "31/12/2026", "30/07/2024", 
+    "30/07/2024", "30/07/2024", "31/12/2026"),
+  Situação = c(
+    "Concluída", "Concluída", "Concluída", "Concluída", "Concluída",
+    "Em andamento", "Em andamento", "Em andamento", "Não iniciada", "Concluída",
+    "Concluída", "Concluída", "Concluída", "Concluída", "Em andamento",
+    "Em andamento", "Em andamento", "Concluída", "Concluída", "Em andamento",
+    "Em andamento", "Em andamento", "Não iniciada"))
+
+kbl(tabela_41, format = "html", caption = " ") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>20. DESCARBONIZAÇÃO
+</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+Em razão da publicação da Resolução CNJ n. 594 em 08 de novembro de 2024, a qual trouxe alterações na Resolução CNJ n. 400 de 16 de junho de 2021, que, por sua vez, instituiu o planejamento relacionado à sustentabilidade no âmbito dos órgãos integrantes do poder Judiciário nacional.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+A principal alteração trazida foi a institucionalização do Programa Justiça Carbono Zero,  que objetiva medir, reduzir e compensar as emissões de Gases de efeito estufa resultantes do funcionamento dos órgãos judiciários. Houve a inclusão da descarbonização na relação de temas mínimos constituidores do PS, bem como a criação de indicadores relacionados a esta temática.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Deste modo, embora ao fim de 2024 a descarbonização ainda não integrasse o PS, os indicadores previstos, bem como o desempenho do PJRO nestes, integrarão o presente relatório.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Os indicadores são subdivididos em categorias, as quais são apresentadas nos próximos subtítulos acompanhadas da descrição e resultados.</div>
+
+20.1  Indicadores de Plano de Descarbonização 
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.1.1. PlDescarb Elaboração de Plano de Descarbonização:** Indicador que abrange o planejamento das medidas para inventário, redução e compensação de emissões, incluindo ações, projetos, cronograma e metas parciais e finais. </div>
+
+20.2. Inventário de Emissões de GEE
+<div style="text-align: justify; text-indent: 2em;">
+A instituição não possui plano de descarbonização referente ao ano de 2024, no entanto está elaborando a primeira versão do Plano o qual será enviado ao CNJ pelo sistema PLS-JUD até o dia 28/02/2025.
+</div>
+
+**PLS-Jud: Não**
+
+20.2. Inventário de Emissões de GEE
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.2.1.  Inv1 Realização do Inventário de Emissões:** Indicador no qual deverá ser informado se o inventário é completo (abrange todas as unidades judiciárias, ou seja, todos os edifícios); se o inventário é parcial (abrange uma parcela das unidades judiciárias, ou seja, nem todos os edifícios e localidades estão contempladas); ou se não há inventário.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Não foi realizado o inventário em 2024, mas está sendo elaborado estudo para viabilizar a contratação de empresa especializada ainda no primeiro trimestre de 2025.</div>
+
+**PLS-Jud: Não**
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.2.2 Inv2 Abrangência do Inventário de Emissões:** Percentual de municípios que são sede de unidades judiciárias (comarcas, subseções judiciárias etc.) que estão abrangidos no inventário. Caso o inventário seja completo, informar o total de municípios-sede do órgão.</div>
+
+Não há inventário realizado no momento para indicar a abrangência.
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.2.3 Inv3 Inclusão de emissões dos Escopos 1, 2 e 3 no Inventário de Emissões:** Inclusão no inventário de emissões da quantificação de emissões dos Escopos 1, 2 ou 3. · Escopo 1: emissões diretas de Gases de Efeito Estufa (GEE), de fontes próprias ou controladas pela unidade judiciária inventariantes; · Escopo 2: emissões indiretas de Gases de Efeito Estufa (GEE) associadas à geração de energia elétrica e/ou térmica comprada ou trazida para dentro dos limites organizacionais da unidade judiciária; · Escopo 3: emissões indiretas de Gases de Efeito Estufa (GEE), não abrangidas na Etapa 2, em fontes que não sejam de propriedade e/ou controle da unidade judiciária.</div>
+
+Não há inventário realizado no momento para indicar a abrangência.
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.2.4 Inv4 Verificação de inventário de emissões:** Realização de verificação do inventário de emissões por organismo independente e acreditado, com avaliação da precisão e integridade das informações reportadas e da conformidade da metodologia utilizada. Não há inventário realizado no momento.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Quantidade de Emissões de GEE: Quantificação de emissões diretas e indiretas de GEE inventariadas, considerando os escopos 1, 2 e, quando aplicável, 3 do Protocolo Brasileiro GHG Protocol ou outra metodologia reconhecida nacional e internacionalmente. </div>
+
+Não há inventário realizado no momento para indicar se houve a verificação.
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.2.5 Inv5 – Quantidade de Emissões de GEE:** quantificação de emissões diretas e indiretas de GEE inventariadas, considerando os escopos 1, 2 e, quando aplicável, 3 do Protocolo Brasileiro GHG Protocol ou outra metodologia reconhecida nacional e internacionalmente.</div>
+
+Como ainda não foi realizado o inventário de emissões, não se tem essas informações.
+
+**PLS-Jud: Não possui inventário.**
+
+20.3. Indicadores de Redução de Emissões de GEE
+
+**20.3.1. RedGEE1 – Número de Ações de Redução de Emissões de GEE:** medidas adotadas no período para reduzir suas emissões de GEE
+
+Tabela 42 – Indicador número de Ações de Redução de Emissões de GEE 
+```{r, echo=FALSE}
+tabela_acao <- data.frame(
+  Ação = c(
+    "AC1 – Energias Renováveis",
+    "AC2 – Eficiência Energética",
+    "AC3 – Consumo Sustentável da Água",
+    "AC4 – Transporte Sustentável",
+    "AC5 – Contratações Sustentáveis",
+    "AC6 – Destinação Adequada de Resíduos",
+    "AC7 – Reengenharia de Ocupação de Espaços",
+    "RedGEE1"
+  ),
+  Quantidade = c(1, 2, 2, 3, 3, 8, 1, 20),
+  Descrição = c(
+    "1. Implementação de sistemas fotovoltaicos.",
+    
+    "1. Implementação de iluminação com lâmpadas LED;<br> 2. Implementação de sistema de climatização inverter.",
+    
+    "1. Instalação de reservatórios para a captação da água da chuva;<br> 2. Escolha de materiais mais eficientes para consumo da água, como por exemplo descargas e torneiras com tecnologia Pressmatic.",
+    
+    "1. Aquisição de dois carros híbridos;<br> 2. Uma ação para incentivar o compartilhamento de veículos em viagens;<br> 3. Pegadas Verdes - bicicleta como meio de transporte (Liga do Bem Viver).",
+    
+    "1. Ação de capacitação - Três ações de sensibilização e capacitação:<br> 1.1. Seminário Excelência em Contratações Públicas Sustentáveis;<br> 1.2. Fórum Brasileiro de Contratação e Gestão Pública;<br> 1.3. Sensibilizações com os gestores de contrato para observância dos critérios de sustentabilidade.<br><br> 2. Publicação do Ato Nº 520, de 27/03/2024 sobre o Plano de Contratações Anual de 2024 no Poder Judiciário de Rondônia.<br><br> 3.	Foi publicada a Instrução n. 146/2024 (Dispõe sobre as atribuições e responsabilidades dos(as) gestores(as) e fiscais de contratos firmados pelo Tribunal de Justiça do Estado de Rondônia e dá outras providências.), que estabelece que a Divisão de Contratos e Convênios entregará, anualmente, lista de gestores e fiscais de contratos para Divisão de Acompanhamento e Desenvolvimento de Carreiras (Diadec) para fins de capacitação (art. 23, § 3º). A capacitação deverá ocorrer conforme Trilha de aprendizado para Gestores e Fiscais de contratos (0009084-63.2021.8.22.8000), que abordará critérios de sustentabilidade na gestão e fiscalização dos contratos.",
+    
+    "1. Disponibilização de recipientes para arrecadação de resíduos recicláveis;<br> 2. Sensibilização Olímpiadas da Sustentabilidade;<br> 3.	Realização das melhores práticas para destinação de resíduos no evento Justiça e Cidadania em um Mundo de Emergências Ambientais, culminando com a obtenção da Certificação de Lixo Zero;<br> 4.	Publicação da Revista do Bem Viver - Ano 2024, vol. 2, Núm. 2 - Um problema chamado plástico;<br> 5.	Separação e destinação de resíduos orgânicos em comarcas;<br> 6.	Sensibilização sobre compostagem em uma escola pública de Porto Velho; <br> 7.	Promoção da conscientização e destinação adequada de resíduos da Gincana do Servidor; <br> 8.	Promoção da conscientização e destinação adequada de resíduos da Corrida do Judiciário",
+    
+    "Adaptações que visam a eficiência no aproveitamento dos espaços já existentes sem aumento de área construída.",
+    
+    "AC1 + AC2 + AC3 + AC4 + AC5 + AC6 + AC7 + AC8"))
+
+kable(tabela_acao, format = "html", escape = FALSE, align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.3.2. RedGEE2 - Percentual de energia renovável utilizada:** Percentual do consumo total de energia elétrica proveniente de fontes renováveis de energia. São consideradas fontes alternativas de energia: solar, eólica, maremotriz e geotérmica.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Como todo consumo é proveniente de concessionária, e esta não é considerada pela resolução como renovável, o percentual é de 24%.</div> 
+
+**PLS-Jud: 24%**
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.3.3. RedGEE3 - Energia elétrica injetada na rede de energia por sistemas de fontes alternativas:** Total de KWh injetados na rede de energia elétrica por fontes alternativas (solar, eólica, maremotriz, geotérmica).</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+No ano de referência foram injetados na rede 978.046,36 kWh gerados a partir da geração de energia por fonte fotovoltaica.</div>
+
+**PLS-Jud: 978.046,36 kWh**
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.3.4. RedGEE4 - Percentual da frota de veículos sustentáveis:** Percentual da frota de veículos do órgão composta por veículos movidos por fontes alternativas (exemplos: energia solar, energia elétrica, hidrogênio etc.), em relação à frota total.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Considerando que a instituição possui um total de 64 veículos, dos quais 2 são elétricos e 22 híbridos, o percentual aferido foi de 37,50%.</div>
+
+**PLS-Jud: 978.046,36 kWh**
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.3.5. RedGEE5 – Total de Resíduos Reciclados ou Compostados:** Total de resíduos gerados pelo órgão que são reciclados ou compostados. Foram destinados à reciclagem e compostagem 44.082,06 kg de material.</div>
+
+**PLS-Jud: 44.082,06 kg**
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.3.6. RedGEE6 - Percentual de Redução de Emissões de GEE:** Percentual de redução das emissões de GEE em relação ao período anterior, a ser calculado a partir do segundo período de apuração anual. 
+</div>
+
+Não há ainda apuração da emissão de gases de efeito estufa. 
+
+20.4. Compensação de Emissões de GEE 
+<div style="text-align: justify; text-indent: 2em;">
+**20.4.1. CompGEE – Número de Ações de Compensação de Emissões de GEE:** Número de ações para compensação de emissões de GEE, como medidas ou projetos de florestamento, reflorestamento e revegetação, aquisição de créditos de carbono conforme disciplina legal e/ou regulação do CNJ.</div>
+
+Não há ainda ações para compensação de emissões de GEE conforme definição na Resolução.
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.4.2 CompGEE2 – Verificação das medidas de compensação:** Verificação das medidas de compensação adotadas por entidade independente e acreditada, quando possível.</div>
+
+Não há ainda ações para compensação de emissões de GEE a serem verificadas por entidade acreditada.
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.4.3. CompGEE4 – Percentual de Emissões de GEE compensadas:** Total de emissões de GEE compensadas em relação às emissões inventariadas totais do órgão. Não há emissões de GEE compensadas.</div>
+
+Ainda não há a mensuração de compensação de emissões de GEE.
+
+20.4. Cultura Organizacional
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.5.1. CultGEE1 – Percentual de servidores(as) capacitados(as) para elaborar inventários:** Existência de servidores(as) capacitados(as) a aplicar metodologia para a elaboração de inventários de emissões de GEE.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Três servidores participaram do treinamento Planejamento, Controle e Compensação de Emissões de Carbono em Organizações Públicas, totalizando 0,0012% dos servidores capacitados no órgão para aplicar a metodologia para a elaboração de inventários de emissões de GEE.</div>
+
+**PLS-Jud: 0,0012%**
+
+<div style="text-align: justify; text-indent: 2em;">
+**20.5.2. CultGEE2 – Número de Ações de capacitação e de sensibilização de Emissões de GEE e incentivos a práticas sustentáveis:** Total de cursos de capacitação, campanhas de conscientização e incentivos a práticas sustentáveis em cada ciclo anual de avaliação.</div>
+
+<div style="text-align: justify; text-indent: 2em;">
+Foram realizadas 49 ações, sendo 22 capacitações e 23 sensibilizações conforme já apontado nos indicadores 18.1 e 18.2. E 2 ações de premiação e incentivo à sustentabilidade, sendo a Gincana do Servidor com a arrecadação de tampinhas plásticas e a obtenção da Certificação Lixo Zero do evento “Justiça e Cidadania em um Mundo de Emergências Ambientais".</div>
+
+**PLS-Jud: 47 ações** 
+
+Tabela 43 - Compilação de Dados da Descarbonização
+```{r, echo=FALSE}
+descarbonização <- data.frame(
+  Índice = c(
+    "20.1", "20.1.1", "20.2", "20.2.1", "20.2.2", "20.2.3", "20.2.4", "20.2.5",
+    "20.3", "20.3.1", "20.3.2", "20.3.3", "20.3.4", "20.3.5", "20.3.6",
+    "20.4", "20.4.1", "20.4.2", "20.4.3",
+    "20.5", "20.5.1", "20.5.2"
+  ),
+  Categoria = c(
+    "Indicadores de Plano de Descarbonização", "PIDescarb Elaboração de Plano de Descarbonização",
+    "Inventário de Emissões de GEE", "Inv1 Realização do Inventário de Emissões",
+    "Inv2 Abrangência do Inventário de Emissões", "Inv3 Inclusão de emissões dos Escopos 1, 2 e 3 no Inventário de Emissões",
+    "Inv4 Verificação independente do inventário", "Inv5 – Quantidade de Emissões de GEE",
+    "Indicadores de Redução de Emissões de GEE", "RedGEE1 – Número de Ações de Redução de Emissões de GEE",
+    "RedGEE2 – Percentual de energia renovável utilizada", "RedGEE3 – Energia elétrica injetada na rede de energia por sistemas de fontes alternativas",
+    "RedGEE4 – Percentual da frota de veículos sustentáveis", "RedGEE5 – Total de Resíduos Reciclados ou Compostados",
+    "RedGEE6 – Percentual de Redução de Emissões de GEE",
+    "Compensação de Emissões de GEE", "CompGEE1 – Número de Ações de Compensação de Emissões de GEE",
+    "CompGEE2 – Verificação das medidas de compensação", "CompGEE4 – Percentual de Emissões de GEE compensadas",
+    "Cultura Organizacional", "CultGEE1 – Percentual de servidores(as) capacitados(as) para elaborar inventários",
+    "CultGEE2 – Número de Ações de capacitação e de sensibilização de Emissões de GEE e incentivos a práticas sustentáveis"
+  ),
+  `Unidade de Medida` = c(
+    "", "Não se aplica", "", "Não se aplica", "Percentual", "Não se aplica", "Não se aplica", "tCO2e", 
+    "", "Número absoluto de ações", "%", "KWh", "%", "Kg", "Percentual", 
+    "", "Número absoluto de ações", "Não se aplica", "Percentual", 
+    "", "%", "Número absoluto de ações"
+  ),
+  Dados = c(
+    "", "Não", "", "Não", "Não", "Não", "Não", "Não", 
+    "", "20", "24", "978.046,36", "37,50", "44.082,06", "Não",
+    "", "Não", "Não", "Não",
+    "", "0,0012", "47"
+  )
+)
+
+# Aplicando negrito às categorias principais
+categorias_negrito <- c(
+  "Indicadores de Plano de Descarbonização",
+  "Inventário de Emissões de GEE",
+  "Indicadores de Redução de Emissões de GEE",
+  "Compensação de Emissões de GEE",
+  "Cultura Organizacional"
+)
+
+descarbonização$Categoria <- ifelse(descarbonização$Categoria %in% categorias_negrito, 
+                          cell_spec(descarbonização$Categoria, format = "html", bold = TRUE), 
+                          descarbonização$Categoria)
+
+# Criando a tabela
+kable(descarbonização, format = "html", escape = FALSE, caption = "Compilação de Dados da Descarbonização") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+```
+
+
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>21. COMPILAÇÃO DE RESULTADOS
+</b> 
+
+<div style="text-align: justify; text-indent: 2em;">
+No total foram estabelecidas 27 metas para o ano de 2024 no PS 2024-2026, destas, uma não teve o seu desempenho aferido, 13 foram alcançadas e 13 não, conforme demonstrado na Tabela 42. Desempenho nas Metas.</div>
+
+Tabela 44. Desempenho nas Metas
+```{r, echo=FALSE}
+# Função para colorir a coluna Percentual
+
+# Função para colorir a coluna Atendeu_Meta
+
+# Criando os dados
+# Dados
+dados <- data.frame(
+  Tema = c("PAPEL", "COPOS DESCARTÁVEIS", "ÁGUA ENVASADA EM EMBALAGEM", "IMPRESSÃO", "IMPRESSÃO",
+           "ENERGIA ELÉTRICA", "ÁGUA E ESGOTO", "GESTÃO DE RESÍDUOS", "REFORMAS E CONSTRUÇÕES", 
+           "REFORMAS E CONSTRUÇÕES", "LIMPEZA", "LIMPEZA", "SEGURANÇA INSTITUCIONAL", "TELEFONIA",
+           "VEÍCULOS", "COMBUSTÍVEL", "SERVIÇOS GRÁFICOS", "AQUISIÇÕES E CONTRATAÇÕES",
+           "QUALIDADE DE VIDA E BEM VIVER", "CAPACITAÇÃO E SENSIBILIZAÇÃO PARA SUSTENTABILIDADE",
+           "EQUIDADE E DIVERSIDADE", " ", "ACESSIBILIDADE E INCLUSÃO DA PESSOA COM DEFICIÊNCIA",
+           " ", " ",
+           " ", " ", ""),
+  
+  Meta = c("Reduzir em 5% anualmente o gasto de papel per capita até 2026",
+           "Reduzir em 10% anualmente o consumo de copos descartáveis até 2026",
+           "Manter o consumo de água envasada descartável per capita em até 0,1 até 2026",
+           "Reduzir em 2% anualmente a quantidade de equipamentos de impressão per capita até 2026",
+           "Reduzir em 2% anualmente a quantidade de impressão per capita até 2026",
+           "Reduzir em 2% anualmente o consumo de energia elétrica até 2026",
+           "Reduzir em 2% anualmente o consumo de água em m³ até 2026",
+           "Aumentar em 10% anualmente a destinação de materiais para reciclagem até 2026",
+           "Executar pelo menos 80% do orçamento previsto para reformas até 2026",
+           "Executar pelo menos 80% do orçamento previsto para construções até 2026",
+           "Gerir gasto com limpeza para que não ultrapasse 15% em relação ao ano anterior",
+           "Reduzir em 3% anualmente o gasto com materiais de limpeza até 2026",
+           "Gerir gasto com vigilância eletrônica para que não ultrapasse 12% do orçamento",
+           "Reduzir em 2% anualmente o gasto com telefonia fixa e móvel até 2026",
+           "Aumentar em 3,5% anualmente o índice de usuários por veículo até 2026",
+           "Alcançar média mínima de 8km/l no consumo de combustível da frota até 2026",
+           "Reduzir em 3% os gastos com serviços gráficos até 2026",
+           "Realizar pelo menos 50% das contratações anuais observando critérios de sustentabilidade",
+           "Manter percentual mínimo de 2% da força de trabalho em ações de Qualidade de Vida",
+           "Capacitar e sensibilizar diretamente, no mínimo, 15% do corpo funcional até 2026",
+           "Capacitar e sensibilizar diretamente, no mínimo, 6% do corpo funcional até 2026",
+           "Alcançar 100% das etapas previstas anualmente para cada ação de Política
+Institucional",
+           "Aumentar 50%, anualmente, a quantidade de estagiários com deficiência até 2026",
+           "Capacitar até dezembro de 2026, 25% de magistrados(as) e 25% de servidores(as) nas temáticas de acessibilidade e inclusão das pessoas com deficiência"," ",
+           "Realizar, anualmente, no mínimo, 70% dos eventos do PJRO com acessibilidade comunicacional",
+           "Atingir, anualmente, no mínimo, 95% na avaliação do Avaliador e Simulador de Acessibilidade em Sítios (ASES)",
+           "Garantir que todas as novas obras e/ou reformas obedeçam à NBR 9050, conforme cronogramas e orçamento"),
+  
+  Meta_Numerica = c("R$ 34,97", "5.157", "0,1", "0,18", "1.014", "7.769.337,10", "19.570", "48.824,42 kg", "R$ 25.072.000,00",
+                     "R$ 45.696.000,00", "R$ 49,66", "R$ 46.585,37", "R$ 6.037.995,00", "R$ 156,61", "72", "8km/l", "R$ 314.843,17",
+                     "110", "2%", "5%", "2%","100%",  "6", "25%","25%", "70%", "95%", "20%"),
+  
+  Resultado = c("R$ 12,99", "6.573", "0,23", "0,15", "1.489", "7.245.942,74", "20.514", "44.064,06 kg", "R$ 7.064.730,79",
+                "R$ 15.163.298,68", "R$ 49,48", "R$ 51.243,79", "R$ 5.201.258,42", "R$ 91,68", "71,76", "5,87km/l", "R$ 610.113,22",
+                "195", "12,14%", "56,71%", "2,02%","80%" , "8", "42% Magistrados","39% Servidores",  "89%", "88%", "—"),
+  
+  Percentual = c(37.15, 127.46, 230, 83.8, 143.8, 93.26, 104.82, 90.01, 28.18, 33.18, 99.62, 110,
+                   86.14, 58.54, 99.67, 73.38, 193.78, 177.27, 607, 1134.2, 101, 80, 133.33, 168, 156, 78.65, 92.63, 0)
+)
+
+# Criando a coluna "Atendeu_Meta"
+dados$Atendeu_Meta <- ifelse(dados$Percentual <= 100, "SIM", "NÃO")
+
+# Criando a coluna "Sim_Nao" conforme a sequência fornecida (usada apenas internamente)
+dados$Sim_Nao <- c("SIM", "NÃO", "NÃO", "SIM", "NÃO", "SIM", "NÃO", "NÃO", "NÃO", "NÃO", 
+                   "SIM", "NÃO", "SIM", "SIM", "NÃO", "NÃO", "NÃO", "SIM", "SIM", "SIM", 
+                   "SIM", "NÃO", "SIM", "SIM","SIM", "SIM", "NÃO", "NÃO")
+
+# Função para colorir a coluna Percentual
+colore_percentual <- function(sim_nao, percentual) {
+  if (is.na(percentual)) {  # Se for NA, retorna vazio
+    return("")
+  }
+  
+  if (sim_nao == "SIM") {
+    return(sprintf("<span style='color:green;'>%.2f%%</span>", percentual))
+  } else {
+    return(sprintf("<span style='color:red;'>%.2f%%</span>", percentual))
+  }
+}
+
+# Aplicando a coloração na coluna Percentual
+dados$Percentual_Colorido <- mapply(colore_percentual, dados$Sim_Nao, dados$Percentual)
+
+# Gerando a tabela formatada SEM exibir a coluna "Sim_Nao"
+kable(
+  dados %>% select(Tema, Meta,`Meta Numerica`= Meta_Numerica, Resultado,`Alcance da Meta` = Percentual_Colorido), 
+  format = "html", escape = FALSE) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+``` 
+
+
+
+<div style="text-align: justify; text-indent: 2em;">
+Em termos percentuais o  desempenho total do plano foi de 48% das metas alcançadas, e o mesmo percentual para as metas não alcançadas, informação ilustrada pelo gráfico Alcance de Metas:</div>
+
+
+```{r, echo=FALSE, out.width="85%"}
+knitr::include_graphics("alcancedemetas.png")
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+Quanto às ações, o PS conta com 126, para realização no transcurso de sua vigência, destas 23 possuíam conclusão prevista para o ano de 2024 e foram concretizadas, redundando em um percentual de 53,5% do previsto realizado. A análise do Gráfico Ações Previstas 2024 possibilita a observação do esforço efetivamente realizado em relação ao previsto.</div>
+```{r, echo=FALSE, out.width="85%"}
+library(knitr)
+knitr::include_graphics("açõesprevistas.png")
+```
+
+<div style="text-align: justify; text-indent: 2em;">
+A partir dos dados trazidos pelo percentual de esforço aferido (53% das ações previstas concluídas) e pelo percentual de desempenho (48% metas alcançadas), é possível afirmar que os resultados obtidos foram diretamente proporcionais aos esforços realizados. Entretanto, como ambos os percentuais aproximam-se da metade, é possível afirmar que há necessidade de redimensionamento do planejado.</div>
+
+<br>
+<br>    
+  <div style="text-align: justify; text-indent: 2em;">
+  <b>APÊNDICE
+</b> 
+```{r, echo=FALSE}
+# Criar dataframe com os dados
+sustentabilidade <- data.frame(
+  N = 1:21,
+  Capacitações = c(
+    "DHJUS - V Congresso Internacional - Justiça, Democracia e Igualdade Social",
+    "Green Interiors Day 2024",
+    "Expo Revestir 2024",
+    "Seminário Excelência em Contratações Públicas Sustentáveis",
+    "Convergência 2024 - Inovação Pública. Conexão Humana",
+    "Sustentabilidade e objetivos do desenvolvimento sustentável da Agenda 2030",
+    "II Seminário da Ecoliga de Rondônia: Justiça e Cidadania em um Mundo de Emergências Ambientais",
+    "Curso Oficial de Formação Inicial para Magistradas e Magistrados provenientes do XX Concurso Público para Provimento de Juiz de Direito Substituto do TJRO",
+    "Como Fiscalizar com Eficiência Contratos Públicos",
+    "Conflito Fundiário",
+    "Congresso Amazônia em Foco: Desafios e Soluções Multidisciplinares para a Justiça e Sustentabilidade",
+    "Fórum Brasileiro de Contratação e Gestão Pública",
+    "Contratação de Obras Públicas e de Serviços de Manutenção Predial Sob as Regras da Lei nº 14.133/21",
+    "Congresso Nacional de ESG",
+    "Trilha de Formação Inicial de Servidores",
+    "Masterclass Avança de Regularização Fundiária e Urbana",
+    "IV Encontro de Boas Práticas entre os Tribunais do Bioma Amazônico",
+    "5ª Conferência Intermunicipal de Meio Ambiente",
+    "Liderança Cooperativa: Introdução à Comunicação Não Violenta",
+    "Tratamento de adolescentes e jovens indígenas",
+    "Webinário Internacional 'Diálogos sobre linguagem simples: Pelo direito de entender o Poder Público'"),
+  Observações = c(
+    "Período: 13/03/2024 a 14/03/2024",
+    "Ocorrido em: 18/03/2024",
+    "Período: 20/03/2024 a 22/03/2024",
+    "Período: 20/03/2024 a 22/03/2024",
+    "Período: 01/04/2024 a 03/04/2024",
+    "Período: 08/05/2024 a 18/06/2024",
+    "Período: 19/06/2024 a 21/06/2024",
+    "Período: 23/04/2024 a 24/07/2024 (Turma 1) e 23/09/2024 a 30/12/2024 (Turma 2)",
+    "Período: 01/07/2024 a 20/07/2024",
+    "Período: 17/07/2024 a 19/07/2024",
+    "Período: 19/08/2024 a 20/08/2024",
+    "Período: 21/08/2024 a 23/08/2024",
+    "Período: 25/09/2024 a 27/09/2024",
+    "Período: 16/10/2024 a 17/10/2024",
+    "Período: 04/11/2024 a 22/11/2024",
+    "Período: 11/12/2024 a 12/12/2024",
+    "Ocorrido em: 04/06/2024",
+    "Período: 09/12/2024 a 11/12/2024",
+    " ",
+    "Período: 28/10/2024 a 18/11/2024",
+    " "))
+
+#kable(sustentabilidade, format = "html", align = "c", 
+#      col.names = c("Nº", "Capacitações", "Observações")) %>%
+#  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed")) %>%
+#  row_spec(0, background = "#0073C2", color = "white", bold = TRUE) %>%  
+#  row_spec(1:nrow(sustentabilidade), 
+#           background = rep(c("#E6F2FF", "white"), length.out = nrow(sustentabilidade)))  
+
+kable(sustentabilidade, format = "html", align = "c", escape = FALSE, caption = "<b>Sustentabilidade</b>", 
+      col.names = c("Nº", "Capacitações", "Observações")) %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+
+
+
+sensibilizacoes <- data.frame(
+  N = 1:24,
+  Sensibilizações = c(
+    "Sustentabilidade: Novos veículos do TJRO reduzem emissão de resíduos fósseis",
+    "Relatório de Desempenho do Plano de Logística Sustentável de 2023",
+    "Dia Nacional de Conscientização Sobre as Mudanças Climáticas",
+    "Dia Internacional da Floresta",
+    "Dia Mundial da Água",
+    "Ação educativa sobre reciclagem e sustentabilidade",
+    "Sistema para Gestão de Dados do Plano de Sustentabilidade do TJRO",
+    "4ª Edição da Revista Bem Viver",
+    "Seminário da Ecoliga como primeiro evento 'Lixo Zero' de Rondônia",
+    "Projeto 'Colhendo Sementes, Construindo Viveiros, Plantando Florestas'",
+    "Dia da Amazônia",
+    "Campanha 'Água para a Vida'",
+    "Campanha 'Água é Vida, preserve para viver'",
+    "Dia da Árvore",
+    "Campanha 'Adote o Futuro'",
+    "Projeto de Rondônia vence o Prêmio Innovare 2024",
+    "Sementes produzidas em projeto vencedor do Innovare serão distribuídas na 8ª Expojud",
+    "Dia do Consumo Consciente",
+    "1ª Conferência Internacional para a Sustentabilidade no Sistema de Justiça",
+    "Gincana do TJRO arrecada 5 toneladas de tampinhas plásticas",
+    "Olimpíadas da Sustentabilidade: queremos o ouro!",
+    "Entrega do Prêmio Innovare - TJRO é bicampeão",
+    "Exemplo extra 1 para fechar 24 linhas",
+    "Exemplo extra 2 para fechar 24 linhas"),
+  Observações = c(
+    'https://www.tudorondonia.com/noticias/sustentabilidade-novos-veiculos-do-tjro-reduzem-emissao-de-residuos-fosseis-,117055.shtml',
+    'https://drive.google.com/file/d/143o840BiACZADZFEpvTaNML37F48Mo_k/view',
+    'https://www.instagram.com/p/C4-vrJzu7wf/',
+    'https://www.instagram.com/p/C4xyt9GLO_M/',
+    'https://www.instagram.com/p/C40JBhPr3s5/',
+    'https://www.instagram.com/p/C76l3-fs-XI/',
+    'https://www.tjro.jus.br/gestaodepessoas/infomes/9391-tribunal-de-justica-de-rondonia-inova-com-sistema-para-gestao-de-dados-do-plano-de-sustentabilidade-do-tjro',
+    'https://drive.google.com/file/d/1RDt4ehP2NhTyR009DYmlasSFqmPCgnz4/view',
+    'https://www.tjro.jus.br/noticias/item/20716-tjro-comemora-reconhecimento-de-seminario-da-ecoliga-como-primeiro-evento-lixo-zero-de-rondonia',
+    'https://www.tjro.jus.br/noticias/mais-noticias/12686-projeto-colhendo-sementes-construindo-viveiros-plantando-florestas-promove-capacitacoes-em-rondonia',
+    'https://www.tjro.jus.br/noticias/mais-noticias/12705-no-dia-da-amazonia-tjro-promove-atividade-de-educacao-ambiental',
+    "SEI n. 0016396-85.2024.8.22.8000",
+    'https://www.instagram.com/p/C_vZJtDJK6l/',
+    'https://www.instagram.com/p/DAL9iBLPc8n/',
+    'https://www.instagram.com/p/DARKMOnv88U/',
+    'https://www.premioinnovare.com.br/noticias/projeto-de-rondonia-vence-a-categoria-cnj-do-21o-premio-innovare-2024/243',
+    'https://www.tjro.jus.br/noticias/mais-noticias/17517-sementes-produzidas-em-projeto-vencedor-do-innovare-serao-distribuidas-na-8-expojud-em-brasilia',
+    'https://www.instagram.com/reel/DBKAzmKS2M3/',
+    'https://www.cnj.jus.br/agendas/1a-conferencia-internacional-para-a-sustentabilidade-no-sistema-de-justica',
+    'https://www.tjro.jus.br/noticias/mais-noticias/servidores-do-tjro-arrecadam-mais-de-5-toneladas-de-tampinhas-plasticas-em-gincana-com-provas-sociais-2',
+    'https://www.tjro.jus.br/noticias/mais-noticias/tjro-lanca-olimpiadas-da-sustentabilidade-queremos-o-ouro',
+    'https://www.tjro.jus.br/noticias/mais-noticias/assista-ao-vivo-a-entrega-do-premio-innovare-tjro-e-bicampeao',
+    "Observação extra 1",
+    "Observação extra 2"))
+
+#kable(sensibilizacoes, format = "html", align = "c") %>%
+#  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed")) %>%
+#  row_spec(0, background = "#0073C2", color = "white", bold = TRUE) %>%  # Cabeçalho azul
+#  row_spec(1:nrow(sensibilizacoes), 
+#           background = rep(c("#E6F2FF", "white"), length.out = nrow(sensibilizacoes)))  # Linhas alternadas
+
+kable(sensibilizacoes, format = "html", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+
+
+######açoes solidarias#####
+acoes_solidarias <- data.frame(
+  N = 1:17,
+  Acao_Campanha = c(
+    "Páscoa Solidária",
+    "Capacitação e sensibilização sobre assédio e discriminação com os(as) colaboradores(as) terceirizados(as) da empresa Araúna Serviços Especializados LTDA",
+    "Doação de Sangue Disau",
+    "Campanha Tampinha do Amor PJRO",
+    "Campanha Lar do Bebê",
+    "Campanha Hospital do Amor, Dia das Crianças",
+    "Campanha Água para a Vida",
+    "Campanha Criança Feliz",
+    "Campanha Padrinhos(as) do Sorriso",
+    "Campanha 35ª edição Papai Noel dos Correios",
+    "Campanha Natal Especial da Associação Pestalozzi",
+    "Gincana do Judiciário (arrecadação de tampinhas e alimentos não perecíveis)",
+    "Feira da Mulher Empreendedora",
+    "Feira da Sustentabilidade",
+    "Ração em prol das gatinhas do CCDH",
+    "Doação de livros pelo Clube de Leitura TJRO para o projeto Pró-Leitura",
+    "Corrida do Judiciário"),
+  Participantes = c(
+    9, 52, 146, 2000, 10, 10, 10, 10, 16, 603, 
+    137, 312, 653, 645, 255, 155, 363))
+
+# Exibir tabela formatada com kable e kable_styling
+#kable(acoes_solidarias, format = "html", align = "c", 
+#      col.names = c("Nº", "Ação/Campanha", "Participantes")) %>%
+#  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed")) %>%
+#  row_spec(0, background = "#0073C2", color = "white", bold = TRUE) %>%  # Cabeçalho azul com texto branco
+#  row_spec(1:nrow(acoes_solidarias), 
+#           background = rep(c("#E6F2FF", "white"), length.out = nrow(acoes_solidarias)))  # Linhas alternadas (zebrado)
+
+kable(acoes_solidarias, format = "html", align = "c", caption = "<b>Ações Solidárias</b>",
+      col.names = c("Nº", "Ação/Campanha", "Participantes"), escape = FALSE) %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+
+
+######QUALIDADE DE VIDA#####
+qualidade_vida <- data.frame(
+  N = 1:38,
+  Ação = c(
+    "Ação de Saúde Asmil",
+    "Ações de Saúde GGOV",
+    "Campanha Abril Verde",
+    "Campanha de Prevenção da Hipertensão",
+    "Campanha de Prevenção de DORT",
+    "Campanha de Prevenção e Conscientização contra a Dengue",
+    "Campanha de Vacinação",
+    "Campanha Janeiro Branco",
+    "Campanha Março Azul: Cuidados com a saúde do intestino",
+    "Campanha Março Roxo: Mês Mundial de Conscientização Sobre a Epilepsia", 
+    "Oficina 'Fazendo as pazes com o meu ciclo menstrual'",
+    "Piloto Software Ergonomia",
+    "Projeto Preparando o Amanhã",
+    "Projeto Comer Consciente",
+    "Projeto Mais Saúde no Interior",
+    "Projeto Saúde Financeira",
+    "Projeto Se Cuidar é Legal",
+    "1ª Corrida de Rua do Judiciário",
+    "Ação de Saúde - Gabinete da 9ª Vara Cível da Comarca de Porto Velho/RO",
+    "Ação de Saúde GGOV",
+    "Campanha Agosto Dourado",
+    "Campanha de Prevenção de DORT",
+    "Campanha de Vacinação contra Influenza",
+    "Campanha Novembro Azul",
+    "Campanha Outubro Rosa",
+    "Campanha Setembro Amarelo",
+    "Campanha Setembro Vermelho",
+    "Concurso de Fotografia Sorriso Nota 10",
+    "Campanha Dezembro Laranja",
+    "Matéria: Disau alerta sobre cuidados com a saúde para enfrentar o tempo seco e as queimadas",
+    "Gincana do Judiciário",
+    "Matéria: Queimadas: Disau alerta sobre a proteção contra agravamento de doenças",
+    "Campanha Novembro Laranja",
+    "Campanha de prevenção das doenças orais",
+    "Wellhub (Gympass) - plataforma de saúde e bem-estar",
+    "Meditações no Trabalho (Liga do Bem Viver)",
+    "Horta Comunitária (Liga do Bem Viver)",
+    "Pegadas Verdes (Liga do Bem Viver)"),
+  Participantes = c(
+    21, 74, 325, 119, 111, 90, 1681, 140, 137, 40, 
+    21, 24, 166, 99, 423, 411, 1167, 363, 17, 68, 
+    443, 349, 846, 17, 140, 193, 227, 67, 30, 
+    139, 312, 324, 184, 105, 760, 10, 15, 6))
+
+#kable(qualidade_vida, format = "html", align = "c") %>%
+#$  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed")) %>%
+#  row_spec(0, background = "#0073C2", color = "white", bold = TRUE) %>%  # Cabeçalho azul com texto branco
+#  row_spec(1:nrow(qualidade_vida), 
+#           background = rep(c("#E6F2FF", "white"), length.out = nrow(qualidade_vida)))  # Linhas alternadas
+
+kable(qualidade_vida, format = "html", align = "c", escape = FALSE, caption = "<b>Qualidade de Vida</b>") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+
+
+equidade_diversidade <- data.frame(
+  Capacitações = c(
+    "Julgamento com Perspectiva de Gênero",
+    "Criação, Facilitação e Coordenação e Grupos Reflexivos Responsabilizantes para Homens Autores de Violência contra Mulheres Etapa Teórica",
+    "Criação, Facilitação e Coordenação de Grupos Reflexivos e Responsabilizantes para Homens Autores de Violência contra Mulheres",
+    "I Congresso de Família e Sucessões da Região Norte em Rondônia",
+    "Webinário Internacional \"Diálogos sobre linguagem simples: Pelo direito de entender o Poder Público\"",
+    "Curso Linguagem simples aproxima o governo das pessoas. Como usar?",
+    "Semana de Combate ao Assédio e à Discriminação - Formação sobre Assédios nas Organizações e nas relações de trabalho",
+    "Semana de Combate ao Assédio e à Discriminação - Seminário Enfrentamento do Assédio e da Discriminação no Ambiente de Trabalho",
+    "Prevenção e Combate ao Assédio no Trabalho para servidores (as) da STIC",
+    "Tríbia de Formação Inicial de servidores (as)",
+    "7º Encontro Nacional de Juízas e Juízes Negros (ENAJUN) e 4º Fórum Nacional de Juízas e Juízes contra o Racismo e todas as formas de discriminação",
+    "DHUUS - V Congresso Internacional - Justiça, Democracia e Igualdade Social",
+    "Tratamento de adolescentes e jovens indígenas",
+    "Curso de formação continuada para integrantes titulares da Comissão de Heteroidentificação e Comissão Recursal de Heteroidentificação do Exame Nacional de Magistratura",
+    "4ª Semana de Enfrentamento à Violência contra Crianças e Adolescentes - Metodologias Prevenção Violência Sexual contra Crianças e Adolescentes",
+    "Introdução ao Sistema e à Corte Interamericana de Direito Humanos: Direito à igualdade e não discriminação",
+    "Seminário Mulheres Negras em Espaço de Poder - SEI 0013105-77.2024.8.22.8000",
+    "\"Seminário Internacional Fazendo o Gênero 13\"",
+    "Encontro Nacional das Comissões e Subcomitês de Prevenção e Enfrentamento do Assédio Moral, do Assédio Sexual e da Discriminação",
+    "Direito e Questões Raciais",
+    "Semana de Combate ao Assédio e à Discriminação - Palestra em meio virtual para os terceirizados (Webnário)",
+    "Curso Oficial de Formação Inicial para Magistradas e Magistrados provenientes do XX Concurso Público para Provimento de Juiz de Direito Substituto do TIRO"
+  ),
+  Observações = c(
+    "0000212-88.2024",
+    "000049-89.2024",
+    "0000490-89.2024",
+    "0012761-96.2024",
+    "0000172-09.2024\n0006348-67.2024",
+    "0016534-52.2024",
+    "0000703-95.2024",
+    "0000703-95.2024",
+    "0013469-49.2024\n0001892-11.2024",
+    "0000007-59.2024",
+    "0014857-84.2024",
+    "0000061-25.2024",
+    "0001474-73.2024",
+    "0007576-77.2024",
+    "0000230-12.2024",
+    "0001087-58.2024",
+    "0006348-67.2024",
+    "0021794-13.2024\n0021741-32.2024\n0021744-84.2024",
+    "0006919-38.2024",
+    "0012954-14.2024",
+    "0006797-25.2024",
+    ""
+  )
+)
+
+# Exibindo a tabela com kableExtra
+equidade_diversidade <- data.frame(
+  Nº = seq(1, length.out = nrow(equidade_diversidade)),  # Adiciona a numeração automática
+  Capacitações = equidade_diversidade$Capacitações,
+  Observações = equidade_diversidade$Observações
+)
+
+# Exibindo a tabela formatada
+kable(equidade_diversidade, format = "html", align = "c", caption = "<b>Equidade e Diversidade</b>", 
+      col.names = c("Nº", "Capacitações", "Observações")) %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+  
+```
